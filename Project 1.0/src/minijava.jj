@@ -1,0 +1,342 @@
+PARSER_BEGIN(MiniJavaParser)
+public class MiniJavaParser{
+
+}
+PARSER_END(MiniJavaParser)
+	
+/* White space */
+SKIP :
+{
+	" "
+|	"\n"
+|	"\r"
+|	"\t"
+}
+
+/* Comments */
+
+SKIP :
+{
+	"//" : SINGLE_LINE_COMMENT
+|	"/*" : MULTI_LINE_COMMENT
+}
+
+<SINGLE_LINE_COMMENT> SKIP :
+{
+	"\n" : DEFAULT
+|	"\r" : DEFAULT
+|	"\r\n" : DEFAULT
+}
+
+<MULTI_LINE_COMMENT> SKIP :
+{
+	"*/" : DEFAULT
+}
+
+<SINGLE_LINE_COMMENT,MULTI_LINE_COMMENT> MORE :
+{
+	< ~[] >
+}
+
+/* Keywords */
+
+TOKEN : {
+	< CLASS: "class" >
+|	< PUBLIC: "public" >
+|	< STATIC: "static" >
+|	< VOID: "void" >
+|	< STRING: "string" >
+|	< RETURN: "return" >
+|	< INT: "int" >
+|	< BOOLEAN: "boolean" >
+|	< IF: "if" >
+|	< ELSE: "else" >
+|	< WHILE: "while" >
+|	< PRINT: "System.out.println" >
+|	< LENGTH: "length" >
+|	< TRUE: "true" >
+|	< FALSE: "false" >
+|	< THIS: "this" >
+|	< NEW: "new" >
+|	< LONG: "long" >
+|	< EXTENDS: "extends" >
+}
+
+/* Literals */
+
+TOKEN : 
+{
+	< INTEGETR_LITERAL: 
+		"0"
+	|	["1"-"9"] (["0"-"9"])* >
+|	< LONG_LITERAL: 
+		"0" ["l","L"]
+	|	["1"-"9"] (["0"-"9"])* ["l","L"] >
+}
+
+/* Identifiers */
+
+TOKEN : 
+{
+	< IDENTIFIER: 
+		["a"-"z","A"-"Z","_"] (["a"-"z","A"-"Z","_","0"-"9"])* >	
+}
+
+/* Separators */
+
+TOKEN : 
+{
+	< LPAREN: "(" >
+|	< RPAREN: ")" >
+|	< LBRACE: "{" >
+|	< RBRACE: "}" >
+|	< LBRACKET: "[" >
+|	< RBRACKET: "]" >
+|	< SEMICOLON: ";" >
+|	< COMMA: "," >
+|	< DOT: "." >
+}
+
+/* Operators */
+
+TOKEN :
+{
+	< ASSIGN: "=" >
+|	< LT: "<" >
+|	< NOT: "!" >
+|	< EQ: "==" >
+|	< LE: "<=" >
+|	< GE: ">=" >
+|	< NE: "!=" >
+|	< SC_OR: "||" >
+|	< SC_AND: "&&" >
+|	< PLUS: "+" >
+|	< MINUS: "-" >
+|	< MULT: "*" >
+}
+
+/* MiniJava Grammer */
+
+/* Program */
+
+void Program():
+{}
+{
+	MainClass()
+	( ClassDeclaration() )*
+	<EOF>
+}
+
+/* MainClass */
+
+void MainClass():
+{}
+{
+	"class" <IDENTIFIER> "{" "public" "static" "void" "main" 
+		"(" "String" "[" "]" <IDENTIFIER> ")" StatementBlock() "}"
+}
+
+/* ClassDeclaration */
+
+void ClassDeclaration():
+{}
+{
+	"class" <IDENTIFIER> [ "extends" <IDENTIFIER> ] "{"
+		( VariableDeclaration() )* ( MethodDeclaration() )* "}"
+}
+
+/* VariableDeclaration */
+
+void VariableDeclaration():
+{}
+{
+	Type() <IDENTIFIER> ";"
+}
+
+/* MethodDeclaration */
+
+void MethodDeclaration():
+{}
+{
+	"public" <IDENTIFIER> "(" [ FormalList() ] ")"
+		StatementReturnBlock()
+}
+
+/* FormalList */
+
+void FormalList():
+{}
+{
+	Type() <IDENTIFIER> ( "," Type() <IDENTIFIER> )*
+}
+
+/* StatementReturnBlock */
+
+void StatementReturnBlock():
+{}
+{
+	( VariableDeclaration() )*
+	( Statement() )*
+	"return" Expression() ";"
+}
+
+
+/* StatementReturnBlock */
+
+void StatementBlock():
+{}
+{
+	( VariableDeclaration() )*
+	( Statement() )*
+}
+
+/* Type */
+
+void Type():
+{}
+{
+	"int" ["[" "]"]
+|	"boolean"
+|	"long" ["[" "]"]
+|	<IDENTIFIER>
+}
+
+/* Statement */
+
+void Statement():
+{}
+{
+	StatementBlock()
+|	IfStatement()
+|	WhileStatement()
+|	PrintStatement()
+|	AssigmentStatement()
+}
+
+/* IfStatement */
+
+void IfStatement():
+{}
+{
+	"if" "(" Expression() ")" Statement() 
+		[ LOOKAGEAD(1) "else" Statement() ]
+}
+
+/* WhileStatement */
+
+void WhileStatement():
+{}
+{
+	"while" "(" Expression() ")" Statement()
+}
+
+/* PrintStatement */
+
+void PrintStatement():
+{}
+{
+	"System.out.println" "(" Expression() ")" ";"
+}
+
+/* AssigmentStatement */
+
+void AssigmentStatement():
+{}
+{
+	<IDENTIFIER> [ "[" Expression() "]" ] "=" Expression() ";"
+}
+
+/* Expression */
+/* http://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html */
+void Expression():
+{}
+{
+	OrExpression()
+}
+
+void OrExpression():
+{}
+{
+	AndExpression() 
+		( "||" AndExression() )*
+}
+
+void AndExression():
+{}
+{
+	EqualityExpression()
+		( "&&" EqualityExpression() )*
+}
+
+void EqualityExpression():
+{}
+{
+	RelationalExpression() 
+		( "==" RelationalExpression() 
+		| "!=" RelationalExpression() )*
+}
+
+void RelationalExpression():
+{}
+{
+	AdditiveExpression() 
+		( "<" AdditiveExpression()
+		| ">" AdditiveExpression()
+		| "<=" AdditiveExpression()
+		| ">=" AdditiveExpression() )*
+}
+
+void AdditiveExpression():
+{}
+{
+	MultiplicativeExpression() 
+		( "+" MultiplicativeExpression() 
+		| "-" MultiplicativeExpression() )*
+}
+
+void MultiplicativeExpression():
+{}
+{
+	UnaryExpression()
+		( "*" UnaryExpression() )*
+}
+
+void UnaryExpression():
+{}
+{
+	"!" UnaryExpression()
+|	PostFixExression()
+}
+
+void PostFixExression():
+{}
+{
+	PrimaryExpression()
+		( "[" Expression() "]"
+		| LOOKAHEAD(2)
+		  "." <IDENTIFIER> "(" ExpressionList() ")"
+		| "." "length" )*
+}
+
+void PrimaryExpression():
+{}
+{
+	<INTEGETR_LITERAL>
+|	<LONG_LITERAL>
+|	<LONG_LITERAL>
+|	"true"
+|	"false"
+|	<IDENTIFIER>
+|	"this"
+|	"(" Expression() ")"
+|	"new" 
+		( "int" "[" Expression "]"
+		| "long" "[" Expression "]" )
+|	"new" <IDENTIFIER> "(" ")"
+}
+
+void ExpressionList():
+{}
+{
+	Expression() ( "," Expression() )*
+}
