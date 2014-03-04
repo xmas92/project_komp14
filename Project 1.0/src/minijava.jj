@@ -328,9 +328,9 @@ void PrimaryExpression():
 |	<IDENTIFIER>
 |	"this"
 |	"(" Expression() ")"
-|	"new" 
-		( "int" "[" Expression "]"
-		| "long" "[" Expression "]" )
+|	LOOKAHEAD(2) "new" 
+		( "int" "[" Expression() "]"
+		| "long" "[" Expression() "]" )
 |	"new" <IDENTIFIER> "(" ")"
 }
 
