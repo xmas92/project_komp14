@@ -175,7 +175,7 @@ void FormalList():
 void StatementReturnBlock():
 {}
 {
-	( VariableDeclaration() )*
+	( LOOKAHEAD(2) VariableDeclaration() )*
 	( Statement() )*
 	"return" Expression() ";"
 }
@@ -186,7 +186,7 @@ void StatementReturnBlock():
 void StatementBlock():
 {}
 {
-	( VariableDeclaration() )*
+	( LOOKAHEAD(2) VariableDeclaration() )*
 	( Statement() )*
 }
 
