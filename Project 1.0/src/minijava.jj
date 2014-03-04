@@ -323,7 +323,6 @@ void PrimaryExpression():
 {
 	<INTEGETR_LITERAL>
 |	<LONG_LITERAL>
-|	<LONG_LITERAL>
 |	"true"
 |	"false"
 |	<IDENTIFIER>
