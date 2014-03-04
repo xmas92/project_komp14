@@ -219,7 +219,7 @@ void IfStatement():
 {}
 {
 	"if" "(" Expression() ")" Statement() 
-		[ LOOKAGEAD(1) "else" Statement() ]
+		[ LOOKAHEAD(1) "else" Statement() ]
 }
 
 /* WhileStatement */
@@ -258,10 +258,10 @@ void OrExpression():
 {}
 {
 	AndExpression() 
-		( "||" AndExression() )*
+		( "||" AndExpression() )*
 }
 
-void AndExression():
+void AndExpression():
 {}
 {
 	EqualityExpression()
