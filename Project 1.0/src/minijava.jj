@@ -206,7 +206,7 @@ void Type():
 void Statement():
 {}
 {
-	StatementBlock()
+	"{" StatementBlock() "}"
 |	IfStatement()
 |	WhileStatement()
 |	PrintStatement()
