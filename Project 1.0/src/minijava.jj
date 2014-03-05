@@ -159,7 +159,7 @@ void VariableDeclaration():
 void MethodDeclaration():
 {}
 {
-	"public" <IDENTIFIER> "(" [ FormalList() ] ")"
+	"public" Type() <IDENTIFIER> "(" [ FormalList() ] ")"
 		"{"
 		StatementBlock()
 		"return" Expression() ";"
