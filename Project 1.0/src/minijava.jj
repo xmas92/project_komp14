@@ -133,7 +133,8 @@ void MainClass():
 {}
 {
 	"class" <IDENTIFIER> "{" "public" "static" "void" "main" 
-		"(" "String" "[" "]" <IDENTIFIER> ")" StatementBlock() "}"
+		"(" "String" "[" "]" <IDENTIFIER> ")"
+		"{" StatementBlock() "}" "}"
 }
 
 /* ClassDeclaration */
@@ -159,7 +160,10 @@ void MethodDeclaration():
 {}
 {
 	"public" <IDENTIFIER> "(" [ FormalList() ] ")"
-		StatementReturnBlock()
+		"{"
+		StatementBlock()
+		"return" Expression() ";"
+		"}"
 }
 
 /* FormalList */
@@ -170,18 +174,8 @@ void FormalList():
 	Type() <IDENTIFIER> ( "," Type() <IDENTIFIER> )*
 }
 
-/* StatementReturnBlock */
 
-void StatementReturnBlock():
-{}
-{
-	( LOOKAHEAD(2) VariableDeclaration() )*
-	( Statement() )*
-	"return" Expression() ";"
-}
-
-
-/* StatementReturnBlock */
+/* StatementBlock */
 
 void StatementBlock():
 {}
