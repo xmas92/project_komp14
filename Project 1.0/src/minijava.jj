@@ -1,9 +1,60 @@
-PARSER_BEGIN(MiniJavaParser)
-public class MiniJavaParser{
+options
+{
+  JDK_VERSION = "1.7";
+  OUTPUT_DIRECTORY = "lexer";
+  static = true;
+}
 
+PARSER_BEGIN(MiniJavaParser)
+package lexer;
+
+import java.util.*;
+import java.io.*;
+import ast.*;
+import ast.declaration.*;
+import ast.expression.*;
+import ast.statement.*;
+import ast.type.*;
+
+public class MiniJavaParser{
+	private static MiniJavaParser parser;
+
+    public static Program parse(InputStream in, String encoding) throws ParseException {
+        if (parser == null) {
+            parser = new MiniJavaParser(in, encoding);
+        } else {
+            parser.reset(in, encoding);
+        }
+        return parser.Program();
+    }
+
+    public static Program parse(InputStream in) throws ParseException {
+        return parse(in, null);
+    }
+
+    public static Program parse(File file, String encoding) throws ParseException {
+        try {
+	        FileInputStream in = new FileInputStream(file);
+	        try {
+	        	return parse(in, encoding);
+	        } finally {
+	        	in.close();
+	        }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public static Program parse(File file) throws ParseException {
+		return parse(file, null);
+    }
+    
+    private void reset(InputStream in, String encoding) {
+        ReInit(in, encoding);
+    }
 }
 PARSER_END(MiniJavaParser)
-	
+
 /* White space */
 SKIP :
 {
@@ -115,221 +166,400 @@ TOKEN :
 |	< MULT: "*" >
 }
 
-/* MiniJava Grammer */
+/* MiniJava Grammar */
 
 /* Program */
 
-void Program():
-{}
+Program Program():
 {
-	MainClass()
-	( ClassDeclaration() )*
+	MainClass mc;
+	List<ClassDeclaration> classdecl = new LinkedList<ClassDeclaration>();
+	ClassDeclaration cd;
+}
+{
+	mc = MainClass()
+	( cd = ClassDeclaration() { classdecl.add(cd); } )*
 	<EOF>
+	{ return new Program(mc.getBeginLine(), mc.getBeginColumn(), mc, classdecl); }	  
 }
 
 /* MainClass */
 
-void MainClass():
-{}
+MainClass MainClass():
 {
-	"class" <IDENTIFIER> "{" "public" "static" "void" "main" 
+	StatementBlock block;
+	String id;
+	int Line;
+	int Column;
+}
+{
+	"class" {Line=token.beginLine;Column=token.beginColumn;} <IDENTIFIER> {id=token.image;} "{" "public" "static" "void" "main" 
 		"(" "String" "[" "]" <IDENTIFIER> ")"
-		"{" StatementBlock() "}" "}"
+		"{" block=StatementBlock() "}" "}"
+		{return new MainClass(Line,Column,block,id);}
 }
 
 /* ClassDeclaration */
 
-void ClassDeclaration():
-{}
+ClassDeclaration ClassDeclaration():
 {
-	"class" <IDENTIFIER> [ "extends" <IDENTIFIER> ] "{"
-		( VariableDeclaration() )* ( MethodDeclaration() )* "}"
+	String id;
+	String extendsid = null;
+	VariableDeclaration vd;
+	MethodDeclaration md;
+	List<VariableDeclaration> vds = new LinkedList<VariableDeclaration>();
+	List<MethodDeclaration> mds = new LinkedList<MethodDeclaration>();
+	int Line;
+	int Column;
+}
+{
+	"class" {Line=token.beginLine;Column=token.beginColumn;}
+	<IDENTIFIER> {id=token.image;}
+	 [ "extends" <IDENTIFIER> {extendsid=token.image;} ] "{"
+		( vd=VariableDeclaration() {vds.add(vd);})*
+		( md=MethodDeclaration() {mds.add(md);} )*
+	"}"
+	{return new ClassDeclaration(Line,Column,vds,mds,id,extendsid);}
 }
 
 /* VariableDeclaration */
 
-void VariableDeclaration():
-{}
+VariableDeclaration VariableDeclaration():
 {
-	Type() <IDENTIFIER> ";"
+  	String id;
+  	Type type;
+}
+{
+	type=Type() <IDENTIFIER> {id=token.image;} ";"
+	{return new VariableDeclaration(type.getBeginLine(),type.getBeginColumn(),type,id);}
 }
 
 /* MethodDeclaration */
 
-void MethodDeclaration():
-{}
+MethodDeclaration MethodDeclaration():
 {
-	"public" Type() <IDENTIFIER> "(" [ FormalList() ] ")"
+  	List<Parameter > params = null;
+  	Type type;
+  	String id;
+  	StatementBlock block;
+  	Expression returnexpr;
+  	int Line;
+	int Column;
+}
+{
+	"public" {Line=token.beginLine;Column=token.beginColumn;}
+	type=Type()
+	<IDENTIFIER> {id=token.image;} "(" [ params=FormalList() ] ")"
 		"{"
-		StatementBlock()
-		"return" Expression() ";"
+		block=StatementBlock()
+		"return" returnexpr=Expression() ";"
 		"}"
+	{return new MethodDeclaration(Line,Column,type,id,params,block,returnexpr);}
 }
 
 /* FormalList */
 
-void FormalList():
-{}
+List<Parameter> FormalList():
 {
-	Type() <IDENTIFIER> ( "," Type() <IDENTIFIER> )*
+  	String id;
+  	Type type;
+  	List<Parameter > ret = new LinkedList<Parameter >();
+}
+{
+	type=Type() <IDENTIFIER> {id=token.image;}
+	{ret.add(new Parameter(type.getBeginLine(),type.getBeginColumn(),type,id));}
+	( "," type=Type() <IDENTIFIER> {id=token.image;}
+	{ret.add(new Parameter(type.getBeginLine(),type.getBeginColumn(),type,id));} )*
+	{return ret;}
 }
 
 
 /* StatementBlock */
 
-void StatementBlock():
-{}
+StatementBlock StatementBlock():
 {
-	( LOOKAHEAD(2) VariableDeclaration() )*
-	( Statement() )*
+	List<VariableDeclaration > vds = new LinkedList<VariableDeclaration >();
+	List<Statement > stmts = new LinkedList<Statement >();
+	Statement stmt;
+	VariableDeclaration vd;
+}
+{
+	( LOOKAHEAD(2) vd=VariableDeclaration() {vds.add(vd);} )*
+	( stmt=Statement() {stmts.add(stmt);} )*
+	{return new StatementBlock(-1,-1,vds,stmts); } // TODO: Fix line and columt info
 }
 
 /* Type */
 
-void Type():
-{}
+Type Type():
 {
-	"int" ["[" "]"]
-|	"boolean"
-|	"long" ["[" "]"]
-|	<IDENTIFIER>
+  	int Line;
+  	int Column;
+  	String id;
+}
+{
+	"int"{Line=token.beginLine;Column=token.beginColumn;}
+	["[" "]" {return new PrimitiveType(Line,Column,PrimitiveType.Primitive.IntArr);}]
+	{return new PrimitiveType(Line,Column,PrimitiveType.Primitive.Int);}
+|	"boolean" {Line=token.beginLine;Column=token.beginColumn;}
+	{return new PrimitiveType(Line,Column,PrimitiveType.Primitive.Boolean);}
+|	"long" {Line=token.beginLine;Column=token.beginColumn;}
+	["[" "]"{return new PrimitiveType(Line,Column,PrimitiveType.Primitive.LongArr);}]
+	{return new PrimitiveType(Line,Column,PrimitiveType.Primitive.Long);}
+|	<IDENTIFIER> {Line=token.beginLine;Column=token.beginColumn;id=token.image;}
+	{return new ClassType(Line,Column,id);}
 }
 
 /* Statement */
 
-void Statement():
-{}
+Statement Statement():
+{Statement s;}
 {
-	"{" StatementBlock() "}"
-|	IfStatement()
-|	WhileStatement()
-|	PrintStatement()
-|	AssignmentStatement()
+(
+  	"{" s=StatementBlock() "}"
+|	s=IfStatement()
+|	s=WhileStatement()
+|	s=PrintStatement()
+|	s=AssignmentStatement()
+) {return s;}
 }
 
 /* IfStatement */
 
-void IfStatement():
-{}
+IfStatement IfStatement():
 {
-	"if" "(" Expression() ")" Statement() 
-		[ LOOKAHEAD(1) "else" Statement() ]
+  	int Line;
+  	int Column;
+  	Expression cond;
+  	Statement thenstmt;
+  	Statement elsestmt=null;
+}
+{
+	"if"{Line=token.beginLine;Column=token.beginColumn;}
+	 "(" cond=Expression() ")" thenstmt=Statement() 
+		[ LOOKAHEAD(1) "else" elsestmt=Statement() ]
+	{return new IfStatement(Line,Column,cond,thenstmt,elsestmt);}
 }
 
 /* WhileStatement */
 
-void WhileStatement():
-{}
+WhileStatement WhileStatement():
 {
-	"while" "(" Expression() ")" Statement()
+  	int Line;
+  	int Column;
+  	Expression cond;
+  	Statement loop;
+}
+{
+	"while"{Line=token.beginLine;Column=token.beginColumn;}
+	 "(" cond=Expression() ")" loop=Statement()
+	{return new WhileStatement(Line,Column,cond,loop);}
 }
 
 /* PrintStatement */
 
-void PrintStatement():
-{}
+PrintStatement PrintStatement():
 {
-	"System.out.println" "(" Expression() ")" ";"
+  	int Line;
+  	int Column;
+  	Expression expr;
+}
+{
+	"System.out.println" {Line=token.beginLine;Column=token.beginColumn;}
+	 "(" expr=Expression() ")" ";"
+	 {return new PrintStatement(Line,Column,expr);}
 }
 
 /* AssignmentStatement */
 
-void AssignmentStatement():
-{}
+AssignmentStatement AssignmentStatement():
 {
-	<IDENTIFIER> [ "[" Expression() "]" ] "=" Expression() ";"
+  	int Line;
+  	int Column;
+  	String id;
+  	Expression index = null;
+  	Expression expr;
+}
+{
+	<IDENTIFIER> {Line=token.beginLine;Column=token.beginColumn;id=token.image;}
+	[ "[" index=Expression() "]" ] "=" expr=Expression() ";"
+	 {return new AssignmentStatement(Line,Column,id,index,expr);}
 }
 
 /* Expression */
 /* http://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html */
-void Expression():
-{}
+Expression Expression():
+{Expression e;}
 {
-	OrExpression()
+	e=OrExpression(){return e;}
 }
 
-void OrExpression():
-{}
+Expression OrExpression():
 {
-	AndExpression() 
-		( "||" AndExpression() )*
+	Expression ret;
+	Expression e;
+}
+{
+	ret=AndExpression() 
+		( "||" e=AndExpression()
+		{ret=new BinaryExpression(ret.getBeginLine(),ret.getBeginColumn(),
+			BinaryExpression.Operator.Or,ret,e);} )*
+	{return ret;}
 }
 
-void AndExpression():
-{}
+Expression AndExpression():
 {
-	EqualityExpression()
-		( "&&" EqualityExpression() )*
+	Expression ret;
+	Expression e;
+}
+{
+	ret=EqualityExpression()
+		( "&&" e=EqualityExpression()
+		{ret=new BinaryExpression(ret.getBeginLine(),ret.getBeginColumn(),
+			BinaryExpression.Operator.And,ret,e);} )*
+	{return ret;}
 }
 
-void EqualityExpression():
-{}
+Expression EqualityExpression():
 {
-	RelationalExpression() 
-		( "==" RelationalExpression() 
-		| "!=" RelationalExpression() )*
+	Expression ret;
+	Expression e;
+	BinaryExpression.Operator op;
+}
+{
+	ret=RelationalExpression() 
+	(
+		( "==" e=RelationalExpression(){op=BinaryExpression.Operator.Eq;}
+		| "!=" e=RelationalExpression(){op=BinaryExpression.Operator.NotEq;})
+		{ret=new BinaryExpression(ret.getBeginLine(),ret.getBeginColumn(),op,ret,e);}
+	)*
+	{return ret;}
 }
 
-void RelationalExpression():
-{}
+Expression RelationalExpression():
 {
-	AdditiveExpression() 
-		( "<" AdditiveExpression()
-		| ">" AdditiveExpression()
-		| "<=" AdditiveExpression()
-		| ">=" AdditiveExpression() )*
+	Expression ret;
+	Expression e;
+	BinaryExpression.Operator op;
+}
+{
+	ret=AdditiveExpression() 
+	(
+		( "<" e=AdditiveExpression(){op=BinaryExpression.Operator.Less;}
+		| ">" e=AdditiveExpression(){op=BinaryExpression.Operator.Greater;}
+		| "<=" e=AdditiveExpression(){op=BinaryExpression.Operator.LessEq;}
+		| ">=" e=AdditiveExpression(){op=BinaryExpression.Operator.GreaterEq;})
+		{ret=new BinaryExpression(ret.getBeginLine(),ret.getBeginColumn(),op,ret,e);}
+	)*
+	{return ret;}
 }
 
-void AdditiveExpression():
-{}
+Expression AdditiveExpression():
 {
-	MultiplicativeExpression() 
-		( "+" MultiplicativeExpression() 
-		| "-" MultiplicativeExpression() )*
+	Expression ret;
+	Expression e;
+	BinaryExpression.Operator op;
+}
+{
+	ret=MultiplicativeExpression()
+	(
+		( "+" e=MultiplicativeExpression(){op=BinaryExpression.Operator.Plus;}
+		| "-" e=MultiplicativeExpression(){op=BinaryExpression.Operator.Minus;})
+		{ret=new BinaryExpression(ret.getBeginLine(),ret.getBeginColumn(),op,ret,e);}
+	)*
+	{return ret;}
 }
 
-void MultiplicativeExpression():
-{}
+Expression MultiplicativeExpression():
 {
-	UnaryExpression()
-		( "*" UnaryExpression() )*
+	Expression ret;
+	Expression e;
+}
+{
+	ret=UnaryExpression()
+		( "*" e=UnaryExpression()
+		{ret=new BinaryExpression(ret.getBeginLine(),ret.getBeginColumn(),
+			BinaryExpression.Operator.Times,ret,e);} )*
+	{return ret;}
 }
 
-void UnaryExpression():
-{}
+Expression UnaryExpression():
 {
-	"!" UnaryExpression()
-|	PostFixExression()
+  	int Line;
+  	int Column;
+	Expression e;
+}
+{
+	"!" {Line=token.beginLine;Column=token.beginColumn;}
+	e=UnaryExpression(){return new UnaryExpression(Line,Column,UnaryExpression.Operator.Not,e);}
+|	e=PostFixExression() {return e;}
 }
 
-void PostFixExression():
-{}
+Expression PostFixExression():
 {
-	PrimaryExpression()
-		( "[" Expression() "]"
+	Expression ret;
+	Expression e;
+	List<Expression > el;
+	String id;
+}
+{
+	ret=PrimaryExpression()
+		( "[" e=Expression() "]"
+		{ret=new ArrayAccessExpression(ret.getBeginLine(),ret.getBeginColumn(),
+			ret,e);}
 		| LOOKAHEAD(2)
-		  "." <IDENTIFIER> "(" ExpressionList() ")"
-		| "." "length" )*
+		  "." <IDENTIFIER> {id=token.image;} "(" el=ExpressionList() ")"
+		  {ret=new MemberCallExpression(ret.getBeginLine(),ret.getBeginColumn(),
+			ret,id,el);}
+		| "." "length"
+		{ret=new LengthExpression(ret.getBeginLine(),ret.getBeginColumn(),
+			ret);})*
+	{return ret;}
 }
 
-void PrimaryExpression():
-{}
+Expression PrimaryExpression():
+{
+  	int Line;
+  	int Column;
+  	String image;
+  	Expression e;
+}
 {
 	<INTEGETR_LITERAL>
+	{Line=token.beginLine;Column=token.beginColumn;image=token.image;}
+	{return new IntegerLiteralExpression(Line,Column,image);}
 |	<LONG_LITERAL>
-|	"true"
-|	"false"
+	{Line=token.beginLine;Column=token.beginColumn;image=token.image;}
+	{return new LongLiteralExpression(Line,Column,image);}
+|	"true" {Line=token.beginLine;Column=token.beginColumn;}
+	{return new BooleanLiteralExpression(Line,Column,true);}
+|	"false" {Line=token.beginLine;Column=token.beginColumn;}
+	{return new BooleanLiteralExpression(Line,Column,false);}
 |	<IDENTIFIER>
+	{Line=token.beginLine;Column=token.beginColumn;image=token.image;}
+	{return new IdentifierExpression(Line,Column,image);}
 |	"this"
-|	"(" Expression() ")"
-|	LOOKAHEAD(2) "new" 
-		( "int" "[" Expression() "]"
-		| "long" "[" Expression() "]" )
-|	"new" <IDENTIFIER> "(" ")"
+	{Line=token.beginLine;Column=token.beginColumn;}
+	{return new ThisExpression(Line,Column);}
+|	"(" e=Expression() ")" {return e;}
+|	LOOKAHEAD(2) "new" {Line=token.beginLine;Column=token.beginColumn;}
+		( "int" "[" e=Expression() "]"
+		{return new NewArrayExpression(Line,Column,e,PrimitiveType.Primitive.IntArr);}
+		| "long" "[" e=Expression() "]"
+		{return new NewArrayExpression(Line,Column,e,PrimitiveType.Primitive.LongArr);} )
+|	"new" {Line=token.beginLine;Column=token.beginColumn;}
+	<IDENTIFIER> {image=token.image;} "(" ")"
+	{return new NewClassExpression(Line,Column,image);}
 }
 
-void ExpressionList():
-{}
+List<Expression> ExpressionList():
 {
-	Expression() ( "," Expression() )*
+	List<Expression > el = new LinkedList<Expression >();
+	Expression e;
+	
+}
+{
+	e=Expression() {el.add(e);}
+	( "," e=Expression() {el.add(e);} )*
+	{return el;}
 }
