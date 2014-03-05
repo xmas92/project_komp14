@@ -204,7 +204,7 @@ void Statement():
 |	IfStatement()
 |	WhileStatement()
 |	PrintStatement()
-|	AssigmentStatement()
+|	AssignmentStatement()
 }
 
 /* IfStatement */
@@ -232,9 +232,9 @@ void PrintStatement():
 	"System.out.println" "(" Expression() ")" ";"
 }
 
-/* AssigmentStatement */
+/* AssignmentStatement */
 
-void AssigmentStatement():
+void AssignmentStatement():
 {}
 {
 	<IDENTIFIER> [ "[" Expression() "]" ] "=" Expression() ";"
