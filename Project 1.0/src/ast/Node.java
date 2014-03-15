@@ -1,6 +1,5 @@
 package ast;
 
-import ast.visitor.DumpVisitor;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
 
@@ -69,13 +68,6 @@ public abstract class Node {
 
     public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
         return v.visit(this, arg);
-    }
-
-    @Override
-    public final String toString() {
-        DumpVisitor visitor = new DumpVisitor();
-        accept(visitor, null);
-        return visitor.getSource();
     }
 
 }

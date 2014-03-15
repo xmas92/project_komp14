@@ -1,13 +1,26 @@
 package ast.type;
 
+import semanal.ClassTable;
 import ast.Node;
+import ast.type.PrimitiveType.Primitive;
+import ast.visitor.GenericVisitor;
+import ast.visitor.VoidVisitor;
 
 public abstract class Type extends Node {
-
 	public Type(int line, int column) {
 		super(line, column);
-		// TODO Auto-generated constructor stub
 	}
+	
+	@Override
+    public <A> void accept(VoidVisitor<A> v, A arg) {
+        v.visit(this, arg);
+    }
+
+    @Override
+    public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
+        return v.visit(this, arg);
+    }
+
 	public static boolean Same(Type t1, Type t2) {
 		if (t1 instanceof PrimitiveType) {
 			if (t2 instanceof PrimitiveType) {
