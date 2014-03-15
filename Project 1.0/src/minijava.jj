@@ -241,7 +241,7 @@ VariableDeclaration VariableDeclaration():
 
 MethodDeclaration MethodDeclaration():
 {
-  	List<Parameter > params = null;
+  	List<Parameter > params = new LinkedList();
   	Type type;
   	String id;
   	StatementBlock block;
@@ -502,7 +502,7 @@ Expression PostFixExression():
 {
 	Expression ret;
 	Expression e;
-	List<Expression > el;
+	List<Expression > el = new LinkedList();
 	String id;
 }
 {
@@ -511,7 +511,7 @@ Expression PostFixExression():
 		{ret=new ArrayAccessExpression(ret.getBeginLine(),ret.getBeginColumn(),
 			ret,e);}
 		| LOOKAHEAD(2)
-		  "." <IDENTIFIER> {id=token.image;} "(" el=ExpressionList() ")"
+		  "." <IDENTIFIER> {id=token.image;} "(" [ el=ExpressionList() ] ")"
 		  {ret=new MemberCallExpression(ret.getBeginLine(),ret.getBeginColumn(),
 			ret,id,el);}
 		| "." "length"
