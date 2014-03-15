@@ -111,6 +111,7 @@ TOKEN : {
 |	< NEW: "new" >
 |	< LONG: "long" >
 |	< EXTENDS: "extends" >
+|	< IGNORE0: "String" >
 }
 
 /* Literals */
@@ -189,14 +190,16 @@ MainClass MainClass():
 {
 	StatementBlock block;
 	String id;
+	String input;
 	int Line;
 	int Column;
 }
 {
-	"class" {Line=token.beginLine;Column=token.beginColumn;} <IDENTIFIER> {id=token.image;} "{" "public" "static" "void" "main" 
-		"(" "String" "[" "]" <IDENTIFIER> ")"
+	"class" {Line=token.beginLine;Column=token.beginColumn;} <IDENTIFIER> {id=token.image;} "{" "public" "static" "void"
+		<IDENTIFIER> {if (!"main".equals(token.image)) throw new ParseException("mainclass method must be named main");}
+		"(" "String" "[" "]" <IDENTIFIER> {input=token.image;} ")"
 		"{" block=StatementBlock() "}" "}"
-		{return new MainClass(Line,Column,block,id);}
+		{return new MainClass(Line,Column,block,id,input);}
 }
 
 /* ClassDeclaration */
