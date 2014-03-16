@@ -1,5 +1,6 @@
 package ast;
 
+import actrec.Frame;
 import ast.statement.StatementBlock;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
@@ -8,6 +9,7 @@ public class MainClass extends Node {
 	public String id;
 	public String input;
 	public StatementBlock block;
+	public Frame frame;
 	public MainClass(int line, int column, StatementBlock block, String id, String input) {
 		super(line, column);
 		this.id = id;

@@ -20,4 +20,8 @@ public class IntegerLiteralExpression extends Expression {
         return v.visit(this, arg);
     }
 
+    @Override
+    public int Precedence() {
+    	return 16;
+    }
 }

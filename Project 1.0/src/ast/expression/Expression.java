@@ -19,4 +19,7 @@ public abstract class Expression extends Node {
         return v.visit(this, arg);
     }
 
+    public int Precedence() {
+    	return 0;
+    }
 }

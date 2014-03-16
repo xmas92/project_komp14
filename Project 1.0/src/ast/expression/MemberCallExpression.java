@@ -11,6 +11,7 @@ public final class MemberCallExpression extends Expression {
 	public String id;
 	public List<Expression> exprlist;
 	public MethodDeclaration decl;
+	public String typeid;
 	public MemberCallExpression(int line, int column,
 			Expression expr, String id, List<Expression> exprlist) {
 		super(line, column);
@@ -27,6 +28,11 @@ public final class MemberCallExpression extends Expression {
     @Override
     public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
         return v.visit(this, arg);
+    }
+    
+    @Override
+    public int Precedence() {
+    	return 15;
     }
 
 }

@@ -2,6 +2,7 @@ package ast.declaration;
 
 import java.util.List;
 
+import actrec.Frame;
 import ast.Node;
 import ast.Parameter;
 import ast.expression.Expression;
@@ -16,6 +17,7 @@ public class MethodDeclaration extends Node {
 	public List<Parameter> parameters;
 	public StatementBlock block;
 	public Expression returnexpr;
+	public Frame frame;
 	public MethodDeclaration(int line, int column,
 			Type type, String id,
 			List<Parameter> parameters,

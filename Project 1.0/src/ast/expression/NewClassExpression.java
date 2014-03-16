@@ -20,4 +20,9 @@ public final class NewClassExpression extends Expression {
         return v.visit(this, arg);
     }
 
+    @Override
+    public int Precedence() {
+    	return 13;
+    }
+    
 }

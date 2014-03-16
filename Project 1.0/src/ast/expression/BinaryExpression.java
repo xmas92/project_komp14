@@ -1,8 +1,5 @@
 package ast.expression;
 
-import compiler.util.Report;
-
-import ast.type.PrimitiveType;
 import ast.type.PrimitiveType.Primitive;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
@@ -16,6 +13,9 @@ public final class BinaryExpression extends Expression {
 	public Operator op;
 	public Expression e1;
 	public Expression e2;
+	public boolean e1promote;
+	public boolean e2promote;
+	public Primitive type;
 	public BinaryExpression(int line, int column,
 			Operator op, Expression e1, Expression e2) {
 		super(line, column);
@@ -38,30 +38,56 @@ public final class BinaryExpression extends Expression {
     public String toString() {
     	switch (this.op) {
 		case Greater:
-			return "Greater";
+			return ">";
 		case GreaterEq:
-			return "GreaterEq";
+			return ">=";
 		case Less:
-			return "Less";
+			return "<";
 		case LessEq:
-			return "LessEq";
+			return "<=";
 		case Minus:
-			return "Minus";
+			return "-";
 		case Plus:
-			return "Plus";
+			return "+";
 		case Times:
-			return "Times";
+			return "*";
 		case And:
-			return "Times";
+			return "&&";
 		case Or:
-			return "Or";
+			return "||";
 		case Eq:
-			return "Eq";
+			return "==";
 		case NotEq:
-			return "NotEq";
+			return "!=";
 
 		default:
-			return "Unkown";
+			return "Unknown";
+		}
+    }
+    
+    @Override
+    public int Precedence() {
+    	switch (this.op) {
+		case Greater:
+		case GreaterEq:
+		case Less:
+		case LessEq:
+			return 9;
+		case Minus:
+		case Plus:
+			return 11;
+		case Times:
+			return 12;
+		case And:
+			return 4;
+		case Or:
+			return 3;
+		case Eq:
+		case NotEq:
+			return 8;
+
+		default:
+			return 0;
 		}
     }
 }

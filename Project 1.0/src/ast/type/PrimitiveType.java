@@ -56,4 +56,9 @@ public final class PrimitiveType extends Type {
 			return "Unkown";
 		}
 	}
+
+	@Override
+	public boolean IsDoubleWord() {
+		return this.primitive == Primitive.Long;
+	}
 }

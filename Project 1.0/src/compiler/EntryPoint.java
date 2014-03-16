@@ -3,7 +3,11 @@ package compiler;
 import java.io.File;
 
 import semanal.ClassTable;
+import actrec.jvm.Frame;
 import ast.Program;
+import ast.visitor.FancyPrintVisitor;
+import ast.visitor.FrameBuilderVisitor;
+import ast.visitor.JasminCodeGeneratorVisitor;
 import ast.visitor.SemanticsVisitor;
 import lexer.MiniJavaParser;
 import lexer.ParseException;
@@ -25,6 +29,17 @@ public final class EntryPoint {
 		ClassTable.BuildClassTable(p);
 		p.accept(new SemanticsVisitor(), null);
 		// Frame Layout Pass
+		/* Jasmin JVM */
+		p.accept(new FrameBuilderVisitor(), new Frame());
+		// Code Generation
+		JasminCodeGeneratorVisitor jcgv = new JasminCodeGeneratorVisitor();
+		p.accept(jcgv, null);
+		for (String c : jcgv.classes.keySet()) {
+			System.out.println("; " + c + ".j File");
+			System.out.println(jcgv.classes.get(c));
+		}
+		/* Jasmin JVM */
 		System.out.println(p);
+		System.out.println(p.accept(new FancyPrintVisitor(), null));
 	}
 }

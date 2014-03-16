@@ -40,4 +40,9 @@ public final class ClassType extends Type {
 	public String toString() {
 		return this.id;
 	}
+
+	@Override
+	public boolean IsDoubleWord() {
+		return false;
+	}
 }

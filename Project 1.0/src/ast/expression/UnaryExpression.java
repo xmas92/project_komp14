@@ -25,5 +25,10 @@ public class UnaryExpression extends Expression {
     public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
         return v.visit(this, arg);
     }
+    
+    @Override
+    public int Precedence() {
+    	return 14;
+    }
 
 }

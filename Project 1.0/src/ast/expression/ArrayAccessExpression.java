@@ -1,11 +1,13 @@
 package ast.expression;
 
+import ast.type.PrimitiveType.Primitive;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
 
 public final class ArrayAccessExpression extends Expression {
 	public Expression expr;
 	public Expression index;
+	public Primitive type;
 	public ArrayAccessExpression(int line, int column,
 			Expression expr, Expression index) {
 		super(line, column);
@@ -21,5 +23,10 @@ public final class ArrayAccessExpression extends Expression {
     @Override
     public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
         return v.visit(this, arg);
+    }
+    
+    @Override
+    public int Precedence() {
+    	return 15;
     }
 }

@@ -83,15 +83,16 @@ public class TypeVisitor implements GenericVisitor<Type, SymbolTable> {
 
 	@Override
 	public Type visit(ArrayAccessExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
 		Type t = n.expr.accept(this, arg);
 		if (!n.index.accept(this, arg).IsType(Primitive.Int)) {
 			Report.ExitWithError("Index type must be int. (ArrayAccessExpression) (%d:%d)",
 					n.index.getBeginLine(), n.index.getBeginColumn());
 		}
 		if (t.IsType(Primitive.IntArr)) {
+			n.type = Primitive.IntArr;
 			return new PrimitiveType(-1, -1, Primitive.Int);
 		} else if (t.IsType(Primitive.LongArr)) {
+			n.type = Primitive.LongArr;
 			return new PrimitiveType(-1, -1, Primitive.Long);
 		} 
 		return null;
@@ -107,36 +108,86 @@ public class TypeVisitor implements GenericVisitor<Type, SymbolTable> {
 		case GreaterEq:
 		case Less:
 		case LessEq:
-			if (t1.IsType(Primitive.Int) && t2.IsType(Primitive.Int)) 
+			if (t1.IsType(Primitive.Int) && t2.IsType(Primitive.Int)) {
+				n.type = Primitive.Int;
 				return new PrimitiveType(-1,-1,Primitive.Boolean);
-			if ((t1.IsType(Primitive.Int) || t1.IsType(Primitive.Long)) &&
-					(t2.IsType(Primitive.Int) || t2.IsType(Primitive.Long)))
-					return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
+			if ((t1.IsType(Primitive.Int) && t2.IsType(Primitive.Long))) {
+				n.e1promote = true;
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
+			if ((t2.IsType(Primitive.Int) && t1.IsType(Primitive.Long))){
+				n.e2promote = true;
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
+			if ((t2.IsType(Primitive.Long) && t1.IsType(Primitive.Long))){
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
 			Report.ExitWithError("Binary %s expression must use numeric operands. (%s,%s) (%d:%d)",
 					n, t1, t2, n.getBeginLine(), n.getBeginColumn());
 			break;
 		case Minus:
 		case Plus:
 		case Times:
-			if (t1.IsType(Primitive.Int) && t2.IsType(Primitive.Int)) 
+			if (t1.IsType(Primitive.Int) && t2.IsType(Primitive.Int)) {
+				n.type = Primitive.Int;
 				return new PrimitiveType(-1,-1,Primitive.Int);
-			if ((t1.IsType(Primitive.Int) || t1.IsType(Primitive.Long)) &&
-					(t2.IsType(Primitive.Int) || t2.IsType(Primitive.Long)))
-					return new PrimitiveType(-1,-1,Primitive.Long);
+			}
+			if ((t1.IsType(Primitive.Int) && t2.IsType(Primitive.Long))) {
+				n.e1promote = true;
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Long);
+			}
+			if ((t2.IsType(Primitive.Int) && t1.IsType(Primitive.Long))){
+				n.e2promote = true;
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Long);
+			}
+			if ((t2.IsType(Primitive.Long) && t1.IsType(Primitive.Long))){
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Long);
+			}
 			Report.ExitWithError("Binary %s expression must use numeric operands. (%s,%s) (%d:%d)",
 					n, t1, t2, n.getBeginLine(), n.getBeginColumn());
 			break;
 		// Only Boolean
 		case And:
 		case Or:
-			if (t1.IsType(Primitive.Boolean) && t2.IsType(Primitive.Boolean)) 
+			if (t1.IsType(Primitive.Boolean) && t2.IsType(Primitive.Boolean)) {
+				n.type = Primitive.Boolean;
 				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
 			Report.ExitWithError("Binary %s expression must use boolean operands. (%s,%s) (%d:%d)",
 					n, t1, t2, n.getBeginLine(), n.getBeginColumn());
 			break;
 		// All
 		case Eq:
 		case NotEq:
+			if (t1.IsType(Primitive.Boolean) && t2.IsType(Primitive.Boolean)) {
+				n.type = Primitive.Boolean;
+				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
+			if (t1.IsType(Primitive.Int) && t2.IsType(Primitive.Int)) {
+				n.type = Primitive.Int;
+				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
+			if ((t1.IsType(Primitive.Int) && t2.IsType(Primitive.Long))) {
+				n.e1promote = true;
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
+			if ((t2.IsType(Primitive.Int) && t1.IsType(Primitive.Long))){
+				n.e2promote = true;
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
+			if ((t2.IsType(Primitive.Long) && t1.IsType(Primitive.Long))){
+				n.type = Primitive.Long;
+				return new PrimitiveType(-1,-1,Primitive.Boolean);
+			}
 			if (Type.Assignable(t1, t2)) {
 				return new PrimitiveType(-1,-1,Primitive.Boolean);
 			} else if (Type.Assignable(t2, t1)) {
@@ -196,7 +247,13 @@ public class TypeVisitor implements GenericVisitor<Type, SymbolTable> {
 					n.getBeginLine(), n.getBeginColumn());
 		}
 		MiniJavaClass c = ClassTable.ct.get(((ClassType)t).id);
+		if (c == null) {
+			Report.ExitWithError("Class %s cannot be resolved. (%d:%d)", 
+					((ClassType)t).id, n.getBeginLine(), n.getBeginColumn());
+		}
+		n.typeid = c.name;
 		MethodDeclaration m = c.methodtable.get(n.id);
+		n.decl = m;
 		if (m == null) {
 			Report.ExitWithError("The method %s cannot be resolved in class %s. (MemberCallExpression) (%d:%d)", 
 					n.id, c.name, n.getBeginLine(), n.getBeginColumn());

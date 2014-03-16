@@ -1,11 +1,13 @@
 package ast.statement;
 
 import ast.expression.Expression;
+import ast.type.Type;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
 
 public final class PrintStatement extends Statement {
 	public Expression expr;
+	public Type type;
 	public PrintStatement(int line, int column,
 			Expression expr) {
 		super(line, column);

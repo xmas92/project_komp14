@@ -19,4 +19,9 @@ public final class LengthExpression extends Expression {
     public <R, A> R accept(GenericVisitor<R, A> v, A arg) {
         return v.visit(this, arg);
     }
+    
+    @Override
+    public int Precedence() {
+    	return 15;
+    }
 }

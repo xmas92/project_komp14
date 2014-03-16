@@ -1,5 +1,6 @@
 package ast.statement;
 
+import ast.declaration.VariableDeclaration;
 import ast.expression.Expression;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
@@ -8,6 +9,7 @@ public final class AssignmentStatement extends Statement {
 	public String id;
 	public Expression index;
 	public Expression expr;
+	public VariableDeclaration decl;
 	public AssignmentStatement(int line, int column,
 			String id, Expression index, Expression expr) {
 		super(line, column);

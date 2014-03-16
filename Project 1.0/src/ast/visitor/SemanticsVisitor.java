@@ -190,8 +190,10 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 	public void visit(ClassDeclaration n, SymbolTable arg) {
 		arg = new SymbolTable();
 		arg.current = n;
-		for (VariableDeclaration vd : n.variabledeclatartions)
+		for (VariableDeclaration vd : n.variabledeclatartions) {
+			vd.isField = true;
 			vd.accept(this, arg);
+		}
 		for (MethodDeclaration md : n.methoddeclarations)
 			md.accept(this, arg);
 	}
@@ -301,6 +303,7 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 	@Override
 	public void visit(AssignmentStatement n, SymbolTable arg) {
 		Type t1 = arg.GetSymbolType(n.id);
+		n.decl = arg.GetSymbolDecl(n.id);
 		Type t2 = n.expr.accept(new TypeVisitor(), arg);
 		if (n.index == null) {
 			if (!Type.Assignable(t1,t2)) {
@@ -334,8 +337,9 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 
 	@Override
 	public void visit(PrintStatement n, SymbolTable arg) {
-		// TODO Not sure what we can print
-		n.expr.accept(new TypeVisitor(), arg);
+		// TODO: Not sure what we can print
+		// Probably everything, lets do it
+		n.type = n.expr.accept(new TypeVisitor(), arg);
 	}
 
 	@Override
