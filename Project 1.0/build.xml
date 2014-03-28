@@ -5,17 +5,23 @@
     <property name="build.dir"   value="build"/>
     <property name="lib.dir"     value="lib"/>
     <property name="classes.dir" value="${build.dir}/classes"/>
-    <property name="jar.dir"     value="${build.dir}/jar"/>
     <property name="lexer.dir"     value="${src.dir}/lexer"/>
   
 
     <property name="main-class"  value="compiler.EntryPoint"/>
-
-
+	<property name="main-class-jvm" value="mjc.JVMMain"/>
 
     <target name="clean">
         <delete dir="${build.dir}"/>
         <delete dir="${lexer.dir}"/>
+		<delete file="${ant.project.name}.jar"/>
+		<delete verbose="true"> 
+			<fileset dir="." includes="*.j"/>
+		</delete>
+		<delete verbose="true"> 
+			<fileset dir="." includes="*.class"/>
+		</delete>
+		<delete file="mjp.jar"/>
     </target>
 
     <target name="javacc">
@@ -31,20 +37,45 @@
     </target>
 
     <target name="jar" depends="compile">
-        <mkdir dir="${jar.dir}"/>
-        <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+        <jar destfile="${ant.project.name}.jar" basedir="${classes.dir}">
             <manifest>
                 <attribute name="Main-Class" value="${main-class}"/>
             </manifest>
         </jar>
     </target>
 
-    <target name="run" depends="jar">
-        <java jar="${jar.dir}/${ant.project.name}.jar" fork="true"/>
+    <target name="run" depends="clean,jar">
+        <java jar="${ant.project.name}.jar" fork="true"/>
     </target>
+	
+    <target name="run-jvm" depends="clean,jar">
+        <java classpath="${ant.project.name}.jar" classname="${main-class-jvm}">
+			<arg line="${src.dir}/test.minijava"/>
+			<arg line="-S"/>
+		</java>
+    </target>
+	
 
     <target name="clean-build" depends="clean,jar"/>
 
-    <target name="main" depends="clean,run"/>
+    <target name="main" depends="clean,jar"/>
+	
+    <target name="jasmin" depends="run-jvm">
+		<apply executable="java" dir=".">
+			<arg value="-jar"/> 
+			<arg value="${lib.dir}/jasmin.jar"/> 
+			<fileset dir="." includes="*.j"/>
+		</apply>
+	</target>
+
+    <target name="jar-mjp" depends="jasmin">
+        <jar destfile="mjp.jar" basedir=".">
+            <manifest>
+                <!-- -
+				<attribute name="Main-Class" value="${main-class}"/>
+				<!- -->
+            </manifest>
+        </jar>
+    </target>
 
 </project>
