@@ -1,6 +1,7 @@
 options
 {
   JDK_VERSION = "1.7";
+  OUTPUT_DIRECTORY = "lexer";
   static = true;
 }
 
@@ -509,10 +510,9 @@ Expression PostFixExression():
 		( "[" e=Expression() "]"
 		{ret=new ArrayAccessExpression(ret.getBeginLine(),ret.getBeginColumn(),
 			ret,e);}
-		| LOOKAHEAD(2)
-		  "." <IDENTIFIER> {id=token.image;} "(" [ el=ExpressionList() ] ")"
+		| LOOKAHEAD(2) "." <IDENTIFIER> {id=token.image;} "(" [ el=ExpressionList() ] ")"
 		  {ret=new MemberCallExpression(ret.getBeginLine(),ret.getBeginColumn(),
-			ret,id,el);}
+			ret,id,el); el = new LinkedList();}
 		| "." "length"
 		{ret=new LengthExpression(ret.getBeginLine(),ret.getBeginColumn(),
 			ret);})*
@@ -525,6 +525,7 @@ Expression PrimaryExpression():
   	int Column;
   	String image;
   	Expression e;
+  	int i = 0;
 }
 {
 	<INTEGETR_LITERAL>
@@ -545,10 +546,10 @@ Expression PrimaryExpression():
 	{return new ThisExpression(Line,Column);}
 |	"(" e=Expression() ")" {return e;}
 |	LOOKAHEAD(2) "new" {Line=token.beginLine;Column=token.beginColumn;}
-		( "int" "[" e=Expression() "]"
-		{return new NewArrayExpression(Line,Column,e,PrimitiveType.Primitive.IntArr);}
-		| "long" "[" e=Expression() "]"
-		{return new NewArrayExpression(Line,Column,e,PrimitiveType.Primitive.LongArr);} )
+		( "int" (LOOKAHEAD(2)"[" e=Expression() "]"{i++;})+
+		{return new NewArrayExpression(Line,Column,e,PrimitiveType.Primitive.IntArr,i);}
+		| "long" (LOOKAHEAD(2)"[" e=Expression() "]"{i++;})+
+		{return new NewArrayExpression(Line,Column,e,PrimitiveType.Primitive.LongArr,i);} )
 |	"new" {Line=token.beginLine;Column=token.beginColumn;}
 	<IDENTIFIER> {image=token.image;} "(" ")"
 	{return new NewClassExpression(Line,Column,image);}
