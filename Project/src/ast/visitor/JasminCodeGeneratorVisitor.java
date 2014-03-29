@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import actrec.Label;
 import actrec.jvm.Frame.LocalVar;
+import actrec.jvm.JVMStack;
 import ast.MainClass;
 import ast.Node;
 import ast.Parameter;
@@ -51,11 +52,11 @@ public class JasminCodeGeneratorVisitor implements
 	@Override
 	public String visit(MainClass n, Object arg) {
 		String s = "";
-		s += NewLine(".class public " + n.id);
+		s += NewLine(".class public '" + n.id + "'");
 		s += NewLine(".super java/lang/Object");
 		s += DefaultConstructor();
 		s += NewLine(".method public static main([Ljava/lang/String;)V");
-		s += NewLine(".limit stack " + n.block.accept(new JVMStackVisitor(), arg));
+		s += NewLine(".limit stack " + n.block.accept(new JVMStackVisitor(), new JVMStack()));
 		s += NewLine(".limit locals " + ((actrec.jvm.Frame)n.frame).localidx);
 		s += n.block.accept(this, arg);
 		s += NewLine("return");
@@ -96,13 +97,13 @@ public class JasminCodeGeneratorVisitor implements
 	public String visit(ClassDeclaration n, Object arg) {
 		String s = "";
 		currentClass = n.id;
-		s += NewLine(".class public " + n.id);
+		s += NewLine(".class public '" + n.id + "'");
 		if (n.extendsID == null)
 			s += NewLine(".super java/lang/Object");
 		else
-			s += NewLine(".super " + n.extendsID);
+			s += NewLine(".super '" + n.extendsID + "'");
 		for (VariableDeclaration vd : n.variabledeclatartions)
-			s += NewLine(".field public " + vd.id + " " + GetType(vd.type));
+			s += NewLine(".field public '" + vd.id + "' " + GetType(vd.type));
 		if (n.extendsID == null)
 			s += DefaultConstructor();
 		else
@@ -117,15 +118,17 @@ public class JasminCodeGeneratorVisitor implements
 	public String visit(MethodDeclaration n, Object arg) {
 		String s = "";
 		s += NewLine(".method public " + GetDesc(n));
-		s += NewLine(".limit stack " + n.accept(new JVMStackVisitor(), arg));
+		s += NewLine(".limit stack " + n.accept(new JVMStackVisitor(), new JVMStack()));
 		s += NewLine(".limit locals " + ((actrec.jvm.Frame)n.frame).localidx);
 		s += n.block.accept(this, arg);
 		s += n.returnexpr.accept(this, arg);
 		if (n.type.IsType(Primitive.Boolean) || n.type.IsType(Primitive.Int))
 			s += NewLine("ireturn");
-		else if (n.type.IsType(Primitive.Long))
+		else if (n.type.IsType(Primitive.Long)) {
+			if (!n.returnexpr.IsDoubleWord())
+				s += NewLine("i2l");
 			s += NewLine("lreturn");
-		else
+		} else
 			s += NewLine("areturn");
 		s += NewLine(".end method");
 		return s;
@@ -144,7 +147,7 @@ public class JasminCodeGeneratorVisitor implements
 		s += n.index.accept(this, arg);
 		if (n.type == Primitive.IntArr) {
 			s += NewLine("iaload");
-		} else if (n.type == Primitive.IntArr) {
+		} else if (n.type == Primitive.LongArr) {
 			s += NewLine("laload");
 		}
 		return s;
@@ -154,16 +157,24 @@ public class JasminCodeGeneratorVisitor implements
 	public String visit(BinaryExpression n, Object arg) {
 		String s = "";
 		s += n.e1.accept(this, arg);
+		Label l1 = new Label();
+		Label l2 = new Label();
+		if (n.op == BinaryExpression.Operator.Or) {
+			s += NewLine("dup");
+			s += NewLine("ifne " + l1.label);
+		}
+		if (n.op == BinaryExpression.Operator.And) {
+			s += NewLine("dup");
+			s += NewLine("ifeq " + l1.label);
+		}
 		if (n.e1promote)
 			s += NewLine("i2l");
 		s += n.e2.accept(this, arg);
 		if (n.e2promote)
 			s += NewLine("i2l");
-		Label l1 = new Label();
-		Label l2 = new Label();
 		switch (n.op) {
 		case Greater:
-			if (n.type == Primitive.Int) {
+			if (n.itype == Primitive.Int) {
 				s += NewLine("if_icmpgt " + l1.label);
 			} else {
 				s += NewLine("lcmp");
@@ -176,7 +187,7 @@ public class JasminCodeGeneratorVisitor implements
 			s += NewLine(l2.label + ":");
 			break;
 		case GreaterEq:
-			if (n.type == Primitive.Int) {
+			if (n.itype == Primitive.Int) {
 				s += NewLine("if_icmpge " + l1.label);
 			} else {
 				s += NewLine("lcmp");
@@ -189,7 +200,7 @@ public class JasminCodeGeneratorVisitor implements
 			s += NewLine(l2.label + ":");
 			break;
 		case Less:
-			if (n.type == Primitive.Int) {
+			if (n.itype == Primitive.Int) {
 				s += NewLine("if_icmplt " + l1.label);
 			} else {
 				s += NewLine("lcmp");
@@ -202,7 +213,7 @@ public class JasminCodeGeneratorVisitor implements
 			s += NewLine(l2.label + ":");
 			break;
 		case LessEq:
-			if (n.type == Primitive.Int) {
+			if (n.itype == Primitive.Int) {
 				s += NewLine("if_icmple " + l1.label);
 			} else {
 				s += NewLine("lcmp");
@@ -215,9 +226,9 @@ public class JasminCodeGeneratorVisitor implements
 			s += NewLine(l2.label + ":");
 			break;
 		case NotEq:
-			if (n.type == Primitive.Int || n.type == Primitive.Boolean) {
+			if (n.itype == Primitive.Int || n.itype == Primitive.Boolean) {
 				s += NewLine("if_icmpne " + l1.label);
-			} else if (n.type == Primitive.Long) {
+			} else if (n.itype == Primitive.Long) {
 				s += NewLine("lcmp");
 				s += NewLine("ifne " + l1.label);
 			} else {
@@ -230,9 +241,9 @@ public class JasminCodeGeneratorVisitor implements
 			s += NewLine(l2.label + ":");
 			break;
 		case Eq:
-			if (n.type == Primitive.Int || n.type == Primitive.Boolean) {
+			if (n.itype == Primitive.Int || n.itype == Primitive.Boolean) {
 				s += NewLine("if_icmpeq " + l1.label);
-			} else if (n.type == Primitive.Long) {
+			} else if (n.itype == Primitive.Long) {
 				s += NewLine("lcmp");
 				s += NewLine("ifeq " + l1.label);
 			} else {
@@ -246,9 +257,11 @@ public class JasminCodeGeneratorVisitor implements
 			break;
 		case Or:
 			s += NewLine("ior");
+			s += NewLine(l1.label + ":");
 			break;
 		case And:
 			s += NewLine("iand");
+			s += NewLine(l1.label + ":");
 			break;
 		case Plus:
 			if (n.type == Primitive.Int) {
@@ -369,7 +382,7 @@ public class JasminCodeGeneratorVisitor implements
 	@Override
 	public String visit(NewClassExpression n, Object arg) {
 		String s = "";
-		s += NewLine("new " + n.id);
+		s += NewLine("new '" + n.id + "'");
 		s += NewLine("dup");
 		s += NewLine("invokespecial " + n.id + "/<init>()V");
 		return s;
@@ -403,14 +416,18 @@ public class JasminCodeGeneratorVisitor implements
 			if (n.decl.isField) {
 				s += NewLine("aload_0");
 				s += n.expr.accept(this, arg);
+				if (!n.expr.IsDoubleWord() && n.decl.type.IsDoubleWord()) 
+					s += NewLine("i2l");
 				s += NewLine("putfield " + currentClass + "/" + n.id + " " + GetType(n.decl.type));
 			} else {
 				s += n.expr.accept(this, arg);
 				if (n.decl.type.IsType(Primitive.Boolean) || n.decl.type.IsType(Primitive.Int))
 					s += NewLine("istore " + l.idx);
-				else if (n.decl.type.IsType(Primitive.Long))
+				else if (n.decl.type.IsType(Primitive.Long)) {
+					if (!n.expr.IsDoubleWord()) 
+						s += NewLine("i2l");
 					s += NewLine("lstore " + l.idx);
-				else
+				} else
 					s += NewLine("astore " + l.idx);
 			}
 		} else {
@@ -424,8 +441,11 @@ public class JasminCodeGeneratorVisitor implements
 			s += n.expr.accept(this, arg);
 			if (n.decl.type.IsType(Primitive.IntArr))
 				s += NewLine("iastore");
-			else
+			else {
+				if (!n.expr.IsDoubleWord()) 
+					s += NewLine("i2l");
 				s += NewLine("lastore");
+			}
 		}
 		return s;
 	}
@@ -442,6 +462,7 @@ public class JasminCodeGeneratorVisitor implements
 			s += NewLine("ifeq " + el.label);
 		s += n.thenstmt.accept(this, arg);
 		if (n.elsestmt != null) {
+			s += NewLine("goto " + en.label);
 			s += NewLine(el.label + ":");
 			s += n.elsestmt.accept(this, arg);
 		}
