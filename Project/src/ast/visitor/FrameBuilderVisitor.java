@@ -168,8 +168,9 @@ public class FrameBuilderVisitor implements VoidVisitor<Frame> {
 
 	@Override
 	public void visit(IfStatement n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		n.thenstmt.accept(this, arg);
+		if (n.elsestmt != null)
+			n.elsestmt.accept(this, arg);
 	}
 
 	@Override
@@ -194,8 +195,7 @@ public class FrameBuilderVisitor implements VoidVisitor<Frame> {
 
 	@Override
 	public void visit(WhileStatement n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		n.loop.accept(this, arg);
 	}
 
 	@Override
