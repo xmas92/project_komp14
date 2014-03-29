@@ -1,5 +1,6 @@
 package ast.visitor;
 
+import actrec.jvm.JVMStack;
 import ast.MainClass;
 import ast.Node;
 import ast.Parameter;
@@ -31,192 +32,259 @@ import ast.type.PrimitiveType;
 import ast.type.PrimitiveType.Primitive;
 import ast.type.Type;
 
-public class JVMStackVisitor implements GenericVisitor<Integer, Object> {
+public class JVMStackVisitor implements GenericVisitor<Integer, JVMStack> {
 
 	@Override
-	public Integer visit(Node n, Object arg) {
+	public Integer visit(Node n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(MainClass n, Object arg) {
+	public Integer visit(MainClass n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(Parameter n, Object arg) {
+	public Integer visit(Parameter n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(Program n, Object arg) {
+	public Integer visit(Program n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(ClassDeclaration n, Object arg) {
+	public Integer visit(ClassDeclaration n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(MethodDeclaration n, Object arg) {
-		int i1 = n.block.accept(this, arg);
-		int i2 = n.returnexpr.accept(this, arg);
-		return (i1 < i2)?i2:i1;
+	public Integer visit(MethodDeclaration n, JVMStack arg) {
+		n.block.accept(this, arg);
+		n.returnexpr.accept(this, arg);
+		if (n.type.IsDoubleWord()) {
+			arg.Push(2);
+			arg.Pop(2);
+		} else {
+			arg.Push(1);
+			arg.Pop(1);
+		}
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(VariableDeclaration n, Object arg) {
+	public Integer visit(VariableDeclaration n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(ArrayAccessExpression n, Object arg) {
-		int i1 = n.expr.accept(this, arg);
-		int i2 = 1 + n.index.accept(this, arg);
-		return (i1 < i2)?i2:i1;
+	public Integer visit(ArrayAccessExpression n, JVMStack arg) {
+		n.expr.accept(this, arg);
+		arg.Push(1);
+		n.index.accept(this, arg);
+		arg.Push(1);
+		arg.Pop(2);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(BinaryExpression n, Object arg) {
-		int i1 = n.e1.accept(this, arg);
-		int i2 = 1 + n.e2.accept(this, arg);
-		i2 = (i2 < ((n.type == Primitive.Long)?4:2)?4:i2);
-		return (i1 < i2)?i2:i1;
+	public Integer visit(BinaryExpression n, JVMStack arg) {
+		n.e1.accept(this, arg);
+		if (n.itype == Primitive.Long) 
+			arg.Push(2);
+		else
+			arg.Push(1);
+		n.e2.accept(this, arg);
+		if (n.itype == Primitive.Long) {
+			arg.Push(2);
+			arg.Pop(4);
+		} else	{
+			arg.Push(1);
+			arg.Pop(2);
+		}
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(BooleanLiteralExpression n, Object arg) {
-		return 1;
+	public Integer visit(BooleanLiteralExpression n, JVMStack arg) {
+		arg.Push(1);
+		arg.Pop(1);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(Expression n, Object arg) {
+	public Integer visit(Expression n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(IdentifierExpression n, Object arg) {
-		return n.decl.type.IsDoubleWord()?2:1;
+	public Integer visit(IdentifierExpression n, JVMStack arg) {
+		if (n.decl.type.IsDoubleWord()) {
+			arg.Push(2);
+			arg.Pop(2);
+		} else {
+			arg.Push(1);
+			arg.Pop(1);
+		}
+		return arg.Max();
+		
 	}
 
 	@Override
-	public Integer visit(IntegerLiteralExpression n, Object arg) {
-		return 1;
+	public Integer visit(IntegerLiteralExpression n, JVMStack arg) {
+		arg.Push(1);
+		arg.Pop(1);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(LengthExpression n, Object arg) {
-		return 1;
+	public Integer visit(LengthExpression n, JVMStack arg) {
+		arg.Push(1);
+		arg.Pop(1);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(LongLiteralExpression n, Object arg) {
-		return 2;
+	public Integer visit(LongLiteralExpression n, JVMStack arg) {
+		arg.Push(2);
+		arg.Pop(2);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(MemberCallExpression n, Object arg) {
-		int i1 = n.expr.accept(this, arg);
-		int i = 1;
+	public Integer visit(MemberCallExpression n, JVMStack arg) {
+		n.expr.accept(this, arg);
+		arg.Push(1);
+		int i = 0;
 		for (Expression e : n.exprlist) {
-			int i2 = i + e.accept(this, arg);
-			i += 2; // TODO: Over shooting fix so it is only 1 if not long
-			i1 = (i1 < i2)?i2:i1;
+			e.accept(this, arg);
+			if (e.IsDoubleWord()) {
+				i += 2;
+				arg.Push(2);
+			} else {
+				i += 1;
+				arg.Push(1);
+			}
 		}
-		return i1;
+		arg.Pop(i+1);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(NewArrayExpression n, Object arg) {
-		return n.size.accept(this, arg);
+	public Integer visit(NewArrayExpression n, JVMStack arg) {
+		n.size.accept(this, arg);
+		arg.Push(1);
+		arg.Pop(1);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(NewClassExpression n, Object arg) {
-		return 2;
+	public Integer visit(NewClassExpression n, JVMStack arg) {
+		arg.Push(2);
+		arg.Pop(2);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(ThisExpression n, Object arg) {
-		return 1;
+	public Integer visit(ThisExpression n, JVMStack arg) {
+		arg.Push(1);
+		arg.Pop(1);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(UnaryExpression n, Object arg) {
-		return n.expr.accept(this, arg);
+	public Integer visit(UnaryExpression n, JVMStack arg) {
+		n.expr.accept(this, arg);
+		arg.Push(1);
+		arg.Pop(1);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(AssignmentStatement n, Object arg) {
-		int i = n.decl.isField?1:0;
-		if (n.index == null)
-			return i + n.expr.accept(this, arg);
-		int i1 = ++i + n.expr.accept(this, arg);
-		int i2 = ++i + n.index.accept(this, arg);
-		return (i1 < i2)?i2:i1;
+	public Integer visit(AssignmentStatement n, JVMStack arg) {
+		arg.Push(1);
+		if (n.index != null) {
+			n.index.accept(this, arg);
+			arg.Push(1);
+		}
+		n.expr.accept(this, arg);
+		if (n.decl.type.IsDoubleWord()) {
+			arg.Push(2);
+			arg.Pop(2);
+		} else {
+			arg.Push(1);
+			arg.Pop(1);
+		}
+		arg.Pop(1);
+		if (n.index != null) {
+			arg.Pop(1);
+		}
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(IfStatement n, Object arg) {
-		int i1 = n.cond.accept(this, arg);
-		int i2 = n.thenstmt.accept(this, arg);
+	public Integer visit(IfStatement n, JVMStack arg) {
+		n.cond.accept(this, arg);
+		arg.Push(1);
+		arg.Pop(1);
+		n.thenstmt.accept(this, arg);
 		if (n.elsestmt != null) {
-			i1 = (i1 < i2)?i2:i1;
-			i2 = n.elsestmt.accept(this, arg);
+			n.elsestmt.accept(this, arg);
 		}
-		return (i1 < i2)?i2:i1;
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(PrintStatement n, Object arg) {
-		return 1 + n.expr.accept(this, arg);
+	public Integer visit(PrintStatement n, JVMStack arg) {
+		arg.Push(1);
+		n.expr.accept(this, arg);
+		arg.Pop(1);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(Statement n, Object arg) {
+	public Integer visit(Statement n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(StatementBlock n, Object arg) {
-		int i1 = 0;
+	public Integer visit(StatementBlock n, JVMStack arg) {
 		for (Statement s : n.statements) {
-			int i2 = s.accept(this, arg);
-			i1 = (i1 < i2)?i2:i1;
+			s.accept(this, arg);
 		}
-		return i1;
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(WhileStatement n, Object arg) {
-		int i1 = n.cond.accept(this, arg);
-		int i2 = n.loop.accept(this, arg);
-		return (i1 < i2)?i2:i1;
+	public Integer visit(WhileStatement n, JVMStack arg) {
+		n.cond.accept(this, arg);
+		n.loop.accept(this, arg);
+		return arg.Max();
 	}
 
 	@Override
-	public Integer visit(Type n, Object arg) {
+	public Integer visit(Type n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(PrimitiveType n, Object arg) {
+	public Integer visit(PrimitiveType n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Integer visit(ClassType n, Object arg) {
+	public Integer visit(ClassType n, JVMStack arg) {
 		// TODO Auto-generated method stub
 		return null;
 	}
