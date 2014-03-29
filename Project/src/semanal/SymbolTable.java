@@ -9,17 +9,21 @@ import ast.declaration.VariableDeclaration;
 import ast.type.Type;
 
 public class SymbolTable {
+	public HashMap<String, VariableDeclaration> field;
 	public Deque<HashMap<String, VariableDeclaration>> table;
 	public ClassDeclaration current;
 	public SymbolTable() {
+		field = new HashMap<String, VariableDeclaration>();
 		table = new LinkedList<>();
-		table.addFirst(new HashMap<String, VariableDeclaration>());
 	}
 	public void EnterScope() {
 		table.addFirst(new HashMap<String, VariableDeclaration>());
 	}
 	public void LeaveScope() {
 		table.removeFirst();
+	}
+	public boolean AddField(String sym, VariableDeclaration vd) {
+		return field.put(sym, vd) == null;
 	}
 	/***
 	 * Adds a symbol to current scope. (Only if no other symbol with that name exists)
@@ -43,7 +47,7 @@ public class SymbolTable {
 				return scope.get(sym).type;
 			}
 		}
-		return null;
+		return field.containsKey(sym)?field.get(sym).type:null;
 	}
 	
 	public VariableDeclaration GetSymbolDecl(String sym) {
@@ -52,6 +56,6 @@ public class SymbolTable {
 				return scope.get(sym);
 			}
 		}
-		return null;
+		return field.get(sym);
 	}
 }
