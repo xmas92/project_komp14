@@ -35,4 +35,8 @@ public final class MemberCallExpression extends Expression {
     	return 15;
     }
 
+	@Override
+	public boolean IsDoubleWord() {
+		return decl.type.IsDoubleWord();
+	}
 }

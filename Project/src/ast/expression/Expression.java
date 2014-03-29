@@ -22,4 +22,6 @@ public abstract class Expression extends Node {
     public int Precedence() {
     	return 0;
     }
+
+	public abstract boolean IsDoubleWord();
 }

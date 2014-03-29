@@ -66,7 +66,6 @@ public abstract class Type extends Node {
 	}
 	
 	public abstract boolean IsDoubleWord();
-
 	public static boolean Assignable(Type t1, Type t2) {
 		if (t1 instanceof PrimitiveType || 
 				t2 instanceof PrimitiveType) return Same(t1,t2);

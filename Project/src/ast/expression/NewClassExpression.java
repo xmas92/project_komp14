@@ -24,5 +24,9 @@ public final class NewClassExpression extends Expression {
     public int Precedence() {
     	return 13;
     }
-    
+
+	@Override
+	public boolean IsDoubleWord() {
+		return false;
+	} 
 }

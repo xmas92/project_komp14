@@ -26,4 +26,9 @@ public final class IdentifierExpression extends Expression {
     public int Precedence() {
     	return 16;
     }
+
+	@Override
+	public boolean IsDoubleWord() {
+		return decl.type.IsDoubleWord();
+	} 
 }

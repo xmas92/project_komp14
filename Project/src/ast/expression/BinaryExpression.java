@@ -16,6 +16,7 @@ public final class BinaryExpression extends Expression {
 	public boolean e1promote;
 	public boolean e2promote;
 	public Primitive type;
+	public Primitive itype;
 	public BinaryExpression(int line, int column,
 			Operator op, Expression e1, Expression e2) {
 		super(line, column);
@@ -90,4 +91,9 @@ public final class BinaryExpression extends Expression {
 			return 0;
 		}
     }
+
+	@Override
+	public boolean IsDoubleWord() {
+		return itype == Primitive.Long;
+	}
 }

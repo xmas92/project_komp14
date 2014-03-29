@@ -31,4 +31,8 @@ public class UnaryExpression extends Expression {
     	return 14;
     }
 
+	@Override
+	public boolean IsDoubleWord() {
+		return false;
+	} 
 }

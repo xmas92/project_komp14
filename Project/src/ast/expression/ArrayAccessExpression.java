@@ -29,4 +29,9 @@ public final class ArrayAccessExpression extends Expression {
     public int Precedence() {
     	return 15;
     }
+
+	@Override
+	public boolean IsDoubleWord() {
+		return type == Primitive.LongArr;
+	}
 }

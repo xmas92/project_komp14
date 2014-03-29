@@ -25,4 +25,8 @@ public final class LongLiteralExpression extends Expression {
     	return 16;
     }
 
+	@Override
+	public boolean IsDoubleWord() {
+		return true;
+	}
 }
