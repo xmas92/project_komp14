@@ -48,14 +48,19 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 	@Override
 	public void visit(MainClass n, SymbolTable arg) {
 		SymbolTable st = new SymbolTable();
+		st.EnterScope();
 		st.AddSymbol(n.input, null);
 		n.block.accept(this, st);
+		st.LeaveScope();
 	}
 
 	@Override
 	public void visit(Parameter n, SymbolTable arg) {
 		n.type.accept(this, arg);
-		arg.AddSymbol(n.id, n);
+		if (!arg.AddSymbol(n.id, n)) {
+			Report.ExitWithError("Parameter %s already defined. (%d:%d)", 
+					n.id,n.getBeginLine(), n.getBeginColumn());
+		}
 	}
 
 	@Override
@@ -145,6 +150,12 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 				c.methodtable.put(m.id, m);
 			}
 		}
+		for (VariableDeclaration vd : e.fieldtable.values()) {
+			VariableDeclaration t = c.fieldtable.get(vd.id);
+			if (t == null) {
+				c.fieldtable.put(vd.id, vd);
+			}
+		}
 	}
 
 	private void InheritanceNameCheck(ClassTable ct) {
@@ -190,9 +201,12 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 	public void visit(ClassDeclaration n, SymbolTable arg) {
 		arg = new SymbolTable();
 		arg.current = n;
-		for (VariableDeclaration vd : n.variabledeclatartions) {
+		for (VariableDeclaration vd : ClassTable.ct.get(n.id).fieldtable.values()) {
 			vd.isField = true;
-			vd.accept(this, arg);
+			if (!arg.AddField(vd.id, vd)) {
+				Report.ExitWithError("Field %s already defined. (%d:%d)", 
+						vd.id,vd.getBeginLine(), vd.getBeginColumn());
+			}
 		}
 		for (MethodDeclaration md : n.methoddeclarations)
 			md.accept(this, arg);
@@ -219,7 +233,10 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 	@Override
 	public void visit(VariableDeclaration n, SymbolTable arg) {
 		n.type.accept(this, arg);
-		arg.AddSymbol(n.id, n);
+		if (!arg.AddSymbol(n.id, n)) {
+			Report.ExitWithError("Variable %s already defined. (%d:%d)", 
+					n.id,n.getBeginLine(), n.getBeginColumn());
+		}
 	}
 
 	@Override
@@ -320,6 +337,10 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 				Report.ExitWithError("Index type must be int. (AssignmentStatement) (%d:%d)",
 						n.index.getBeginLine(), n.index.getBeginColumn());
 			}
+			if (!n.decl.type.IsType(Primitive.IntArr) && !n.decl.type.IsType(Primitive.LongArr)) {
+				Report.ExitWithError("Trying to index non array. (AssignmentStatement) (%d:%d)",
+						n.getBeginLine(), n.getBeginColumn());
+			}
 		}
 	}
 
@@ -340,6 +361,10 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 		// TODO: Not sure what we can print
 		// Probably everything, lets do it
 		n.type = n.expr.accept(new TypeVisitor(), arg);
+		if (n.type instanceof ClassType) {
+			Report.ExitWithError("Apperently can't print class objects. (PrintStatement) (%d:%d)",
+					n.getBeginLine(), n.getBeginColumn());
+		}
 	}
 
 	@Override
