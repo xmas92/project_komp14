@@ -68,7 +68,10 @@ public abstract class Type extends Node {
 	public abstract boolean IsDoubleWord();
 	public static boolean Assignable(Type t1, Type t2) {
 		if (t1 instanceof PrimitiveType || 
-				t2 instanceof PrimitiveType) return Same(t1,t2);
+				t2 instanceof PrimitiveType) {
+			if (t1.IsType(Primitive.Long) && t2.IsType(Primitive.Int)) return true;
+			return Same(t1,t2);
+		}
 		String s1 = ((ClassType)t1).id;
 		String s2 = ((ClassType)t2).id;
 		while (!s1.equals(s2)) {
