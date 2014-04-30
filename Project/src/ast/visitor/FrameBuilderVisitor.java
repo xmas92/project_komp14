@@ -1,5 +1,6 @@
 package ast.visitor;
 
+import actrec.Access;
 import actrec.Frame;
 import actrec.Label;
 import ast.MainClass;
@@ -36,21 +37,22 @@ public class FrameBuilderVisitor implements VoidVisitor<Frame> {
 
 	@Override
 	public void visit(Node n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(MainClass n, Frame arg) {
-		n.frame = arg.newFrame(new Label(n.id+"$main"));
+		arg.CreateRecord(n.id, n.extendsID);
+		n.frame = arg.newFrame(new Label("main"));
 		n.frame.AllocFormal(false); // the string reference we never use
 		n.block.accept(this, n.frame);
 	}
 
 	@Override
 	public void visit(Parameter n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -59,18 +61,37 @@ public class FrameBuilderVisitor implements VoidVisitor<Frame> {
 		for (ClassDeclaration cd : n.cds) {
 			cd.accept(this, arg);
 		}
+		for (ClassDeclaration cd : n.cds) {
+			FixVirtualAccess(cd);
+		}
+	}
+
+	private void FixVirtualAccess(ClassDeclaration cd) {
+		for (MethodDeclaration md : cd.methoddeclarations)
+			if ((md.virtual || md.override) && md.access == null)
+				md.access = InheritAccess(md); 
+	}
+
+	private Access InheritAccess(MethodDeclaration md) {
+		return (md.access==null)?InheritAccess(md.overrideDecl):md.access;
 	}
 
 	@Override
 	public void visit(ClassDeclaration n, Frame arg) {
-		for (MethodDeclaration md : n.methoddeclarations) 
+		n.record = arg.CreateRecord(n.id, n.extendsID);
+		for (VariableDeclaration vd : n.variabledeclatartions)
+			vd.access = n.record.AllocField(vd.type.IsDoubleWord());
+		for (MethodDeclaration md : n.methoddeclarations) {
+			if (md.virtual && !md.override) // Create VTable, only first occurrence
+				md.access = n.record.AllocVirtual();
 			md.accept(this, arg.newFrame(new Label(n.id+"$"+md.id)));
+		}
 	}
 
 	@Override
 	public void visit(MethodDeclaration n, Frame arg) {
 		n.frame = arg;
-		arg.AllocFormal(false); // this reference
+		n.frame.thisPtr = arg.AllocFormal(false); // this reference
 		for (Parameter p : n.parameters) 
 			p.access = arg.AllocFormal(p.type.IsDoubleWord());
 		n.block.accept(this, arg);
@@ -78,92 +99,91 @@ public class FrameBuilderVisitor implements VoidVisitor<Frame> {
 
 	@Override
 	public void visit(VariableDeclaration n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(ArrayAccessExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(BinaryExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(BooleanLiteralExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(Expression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(IdentifierExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(IntegerLiteralExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(LengthExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(LongLiteralExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(MemberCallExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(NewArrayExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(NewClassExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(ThisExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(UnaryExpression n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(AssignmentStatement n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		return; // Do nothing
 	}
 
 	@Override
@@ -175,14 +195,13 @@ public class FrameBuilderVisitor implements VoidVisitor<Frame> {
 
 	@Override
 	public void visit(PrintStatement n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		return; // Do nothing
 	}
 
 	@Override
 	public void visit(Statement n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -200,20 +219,20 @@ public class FrameBuilderVisitor implements VoidVisitor<Frame> {
 
 	@Override
 	public void visit(Type n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(PrimitiveType n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(ClassType n, Frame arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 }

@@ -10,6 +10,8 @@ public final class AssignmentStatement extends Statement {
 	public Expression index;
 	public Expression expr;
 	public VariableDeclaration decl;
+	public boolean ArrayBoundException;
+	public boolean StaticCheck;
 	public AssignmentStatement(int line, int column,
 			String id, Expression index, Expression expr) {
 		super(line, column);

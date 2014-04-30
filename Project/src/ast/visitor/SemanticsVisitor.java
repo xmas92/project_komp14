@@ -41,8 +41,8 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 
 	@Override
 	public void visit(Node n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -98,7 +98,7 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 		// Check correct method overriding
 		for (MethodDeclaration m : e.methodtable.values()) {
 			MethodDeclaration t = c.methodtable.get(m.id);
-			if (t != null) {
+			if (t != null && t != m) {
 				// Method exists in superclass
 				// Check correct return type
 				if (!Type.Same(t.type, m.type)) {
@@ -145,6 +145,11 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 								t.id, t.getBeginLine(), t.getBeginColumn());
 					}
 				}
+				// Set the superclass method to be virtual (requires runtime lookup)
+				m.virtual = true;
+				// Set the method to override (required for vtable creation)
+				t.override = true;
+				t.overrideDecl = m;
 			} else {
 				// Add superclass method to method table
 				c.methodtable.put(m.id, m);
@@ -241,80 +246,80 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 
 	@Override
 	public void visit(ArrayAccessExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(BinaryExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(BooleanLiteralExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(Expression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(IdentifierExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(IntegerLiteralExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(LengthExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(LongLiteralExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(MemberCallExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(NewArrayExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(NewClassExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(ThisExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(UnaryExpression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -358,7 +363,6 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 
 	@Override
 	public void visit(PrintStatement n, SymbolTable arg) {
-		// TODO: Not sure what we can print
 		// Probably everything, lets do it
 		n.type = n.expr.accept(new TypeVisitor(), arg);
 		if (n.type instanceof ClassType) {
@@ -369,13 +373,12 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 
 	@Override
 	public void visit(Statement n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public void visit(StatementBlock n, SymbolTable arg) {
-		// TODO Auto-generated method stub
 		arg.EnterScope();
 		for (VariableDeclaration vd : n.variabledeclarations) 
 			vd.accept(this, arg);
@@ -396,14 +399,12 @@ public class SemanticsVisitor implements VoidVisitor<SymbolTable> {
 
 	@Override
 	public void visit(Type n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		return; // Do nothing
 	}
 
 	@Override
 	public void visit(PrimitiveType n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		
+		return; // Do nothing
 	}
 
 	@Override

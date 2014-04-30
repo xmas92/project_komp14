@@ -46,8 +46,8 @@ public class FancyPrintVisitor implements GenericVisitor<String, Object> {
 	}
 	@Override
 	public String visit(Node n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -118,7 +118,8 @@ public class FancyPrintVisitor implements GenericVisitor<String, Object> {
 
 	@Override
 	public String visit(ArrayAccessExpression n, Object arg) {
-		return n.expr.accept(this, arg) + "[" + n.index.accept(this, arg) + "]";
+		String abc = n.StaticCheck?((n.ArrayBoundException?"/* Exception */":"/* Ok */")):"";
+		return n.expr.accept(this, arg) + "[" + n.index.accept(this, arg) + abc + "]";
 	}
 
 	@Override
@@ -145,8 +146,8 @@ public class FancyPrintVisitor implements GenericVisitor<String, Object> {
 
 	@Override
 	public String visit(Expression n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -214,7 +215,8 @@ public class FancyPrintVisitor implements GenericVisitor<String, Object> {
 	public String visit(AssignmentStatement n, Object arg) {
 		if (n.index == null) 
 			return NewLine(n.id + " = " + n.expr.accept(this, arg)+ ";");
-		return NewLine(n.id + "[" + n.index.accept(this, arg) + "] = " + n.expr.accept(this, arg) + ";");
+		return NewLine(n.id + "[" + n.index.accept(this, arg) +  "] = " + n.expr.accept(this, arg) + ";" 
+			+ (n.StaticCheck?(" // " + (n.ArrayBoundException?"OOB":"OK")):""));
 	}
 
 	@Override
@@ -244,8 +246,8 @@ public class FancyPrintVisitor implements GenericVisitor<String, Object> {
 
 	@Override
 	public String visit(Statement n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -278,8 +280,8 @@ public class FancyPrintVisitor implements GenericVisitor<String, Object> {
 
 	@Override
 	public String visit(Type n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override

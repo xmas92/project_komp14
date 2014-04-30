@@ -2,6 +2,7 @@ package ast.declaration;
 
 import actrec.Access;
 import ast.Node;
+import ast.type.PrimitiveType.Primitive;
 import ast.type.Type;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
@@ -11,6 +12,7 @@ public class VariableDeclaration extends Node {
 	public String id;
 	public Access access;
 	public boolean isField;
+	public boolean CONST = true;
 	public VariableDeclaration(int line, int column,
 			Type type, String id) {
 		super(line, column);

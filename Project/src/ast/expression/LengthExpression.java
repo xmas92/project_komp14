@@ -24,7 +24,6 @@ public final class LengthExpression extends Expression {
     public int Precedence() {
     	return 15;
     }
-
 	@Override
 	public boolean IsDoubleWord() {
 		return false;

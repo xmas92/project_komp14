@@ -8,8 +8,15 @@ public final class LongLiteralExpression extends Expression {
 	public LongLiteralExpression(int line, int column, String value) {
 		super(line, column);
 		this.value = value;
+		this.setData(new Long(value.substring(0,value.length()-1)));
 	}
 	
+	public LongLiteralExpression(int l, int c, long m) {
+		super(l,c);
+		this.value = m + "l";
+		this.setData(new Long(m));
+	}
+
 	@Override
     public <A> void accept(VoidVisitor<A> v, A arg) {
         v.visit(this, arg);

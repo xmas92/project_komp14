@@ -6,4 +6,15 @@ public class Temp {
 	public Temp() {
 		temp = idx++;
 	}
+	@Override
+	public String toString() {
+		return "t" + temp;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Temp)
+			return ((Temp)o).temp == temp;
+		return false;
+	}
 }

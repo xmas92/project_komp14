@@ -36,32 +36,32 @@ public class JVMStackVisitor implements GenericVisitor<Integer, JVMStack> {
 
 	@Override
 	public Integer visit(Node n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Integer visit(MainClass n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Integer visit(Parameter n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Integer visit(Program n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Integer visit(ClassDeclaration n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -80,8 +80,8 @@ public class JVMStackVisitor implements GenericVisitor<Integer, JVMStack> {
 
 	@Override
 	public Integer visit(VariableDeclaration n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -121,8 +121,8 @@ public class JVMStackVisitor implements GenericVisitor<Integer, JVMStack> {
 
 	@Override
 	public Integer visit(Expression n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -252,8 +252,8 @@ public class JVMStackVisitor implements GenericVisitor<Integer, JVMStack> {
 
 	@Override
 	public Integer visit(Statement n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -273,20 +273,20 @@ public class JVMStackVisitor implements GenericVisitor<Integer, JVMStack> {
 
 	@Override
 	public Integer visit(Type n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Integer visit(PrimitiveType n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Integer visit(ClassType n, JVMStack arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 }

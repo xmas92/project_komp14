@@ -1,12 +1,15 @@
 MAIL=axelbc@kth.se
 ID=aJCxgrGXSTPs
 LANG=java
-JVM
 ISC
 ICG
+JVM
+ARM
+SPILL
 LONG
 IWE
 NBD
+ABC
 CLE
 CGT
 CGE

@@ -1,7 +1,19 @@
 package actrec.jvm;
 
+import java.util.Deque;
+import java.util.HashSet;
+
+import ir.translate.Procedure;
+import ir.tree.Exp;
+import ir.tree.ExpList;
+import ir.tree.NAME;
+import ir.tree.Stm;
 import actrec.Access;
 import actrec.Label;
+import actrec.Record;
+import actrec.Temp;
+import actrec.TempMap;
+import assem.Instr;
 
 
 public class Frame extends actrec.Frame {
@@ -45,6 +57,139 @@ public class Frame extends actrec.Frame {
 	@Override
 	public actrec.Frame newFrame(Label label) {
 		return new Frame(label);
+	}
+
+	@Override
+	public Stm ExitWithFailiur() {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Exp ExternalCall(String f, ExpList explist) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Exp GetPrintStr(boolean isDoubleWord) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Temp RV(int i) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Temp FP() {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Record CreateRecord(String id, String extendsID) {
+		return new dummyRecord();
+	}
+	private class dummyRecord extends Record {
+		@Override
+		public Access AllocField(boolean doubleword) {
+			return null; // JUst a DUmmy
+		}
+
+		@Override
+		public int Size() {
+			return 0; // JUst a DUmmy
+		}
+		private class dummy extends Access {
+			
+		}
+		@Override
+		public Access AllocVirtual() {
+			// Should never happen
+			return new dummy();
+		}
+
+		@Override
+		public int VtableSize() {
+			// Should never happen
+			throw new Error();
+		}
+
+		@Override
+		public Label GetVTable() {
+			// Should never happen
+			throw new Error();
+		}
+		
+	}
+
+	@Override
+	public Access ArgAccess(int i) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Deque<Instr> AddPrologueEpilogue(Procedure li) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public HashSet<Temp> registers() {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public TempMap tempMap() {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public int SpillOffset() {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public void AddReturnSink(Procedure proc) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Stm ArrayBoundCheck(Exp arr, Exp idx) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Exp GetPrintStrBool(boolean value) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Stm GetPrintStrBool(Exp value) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public NAME GetDataLabel(Label getVTable) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Deque<Instr> AddDataAccess(Procedure li) {
+		// Should never happen
+		throw new Error();
 	}
 
 }

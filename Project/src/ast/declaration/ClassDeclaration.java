@@ -2,15 +2,17 @@ package ast.declaration;
 
 import java.util.List;
 
+import actrec.Record;
 import ast.Node;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
 
-public final class ClassDeclaration extends Node {
+public class ClassDeclaration extends Node {
 	public List<VariableDeclaration> variabledeclatartions;
 	public List<MethodDeclaration> methoddeclarations;
 	public String id;
 	public String extendsID;
+	public Record record;
 	public ClassDeclaration(int line, int column,
 			List<VariableDeclaration> variabledeclatartions,
 			List<MethodDeclaration> methoddeclarations,

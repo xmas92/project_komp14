@@ -8,6 +8,8 @@ public final class ArrayAccessExpression extends Expression {
 	public Expression expr;
 	public Expression index;
 	public Primitive type;
+	public boolean ArrayBoundException;
+	public boolean StaticCheck;
 	public ArrayAccessExpression(int line, int column,
 			Expression expr, Expression index) {
 		super(line, column);

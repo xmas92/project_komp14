@@ -8,6 +8,7 @@ public final class BooleanLiteralExpression extends Expression {
 	public BooleanLiteralExpression(int line, int column, boolean value) {
 		super(line, column);
 		this.value = value;
+		setData(new Boolean(value));
 	}
 	
 	@Override
@@ -24,7 +25,7 @@ public final class BooleanLiteralExpression extends Expression {
     public int Precedence() {
     	return 16;
     }
-
+    
 	@Override
 	public boolean IsDoubleWord() {
 		return false;

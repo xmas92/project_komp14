@@ -6,9 +6,54 @@ import ast.visitor.VoidVisitor;
 
 public final class BinaryExpression extends Expression {
 	public static enum Operator {
-		And, Or, 
-		Less, LessEq, Greater, GreaterEq, Eq, NotEq,
-		Plus, Minus, Times
+		And, Or, // Boolean algebra
+		Less, LessEq, Greater, GreaterEq, Eq, NotEq, // Relations
+		Plus, Minus, Times,	// Arithmetic
+		 // For Compiler Only (NOT IN LANUGAGE)
+		ASR, ADDS, ADC, SUBS, SBC, XOR, // Arithmetic
+		LessU, LessEqU, GreaterU, GreaterEqU,// Relations unsigned versions
+		;
+		public static Operator Unsigned(Operator op) {
+			switch (op) {
+			case Less:
+				return LessU;
+			case LessEq:
+				return LessEqU;
+			case Greater:
+				return GreaterU;
+			case GreaterEq:
+				return GreaterEqU;
+			default:
+				return null;
+			}
+		}
+
+		public static Operator Reciprocal(Operator op) {
+			switch (op) {
+			case Less:
+				return GreaterEq;
+			case LessU:
+				return GreaterEqU;
+			case LessEq:
+				return Greater;
+			case LessEqU:
+				return GreaterU;
+			case Greater:
+				return LessEq;
+			case GreaterU:
+				return LessEqU;
+			case GreaterEq:
+				return Less;
+			case GreaterEqU:
+				return LessU;
+			case Eq:
+				return NotEq;
+			case NotEq:
+				return Eq;
+			default:
+				return null;
+			}
+		} 
 	}
 	public Operator op;
 	public Expression e1;

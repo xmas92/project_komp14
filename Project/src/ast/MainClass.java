@@ -1,18 +1,17 @@
 package ast;
 
 import actrec.Frame;
+import ast.declaration.ClassDeclaration;
 import ast.statement.StatementBlock;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;
 
-public class MainClass extends Node {
-	public String id;
+public class MainClass extends ClassDeclaration {
 	public String input;
 	public StatementBlock block;
 	public Frame frame;
 	public MainClass(int line, int column, StatementBlock block, String id, String input) {
-		super(line, column);
-		this.id = id;
+		super(line, column,null,null,id,null);
 		this.block = block;
 		this.input = input;
 	}

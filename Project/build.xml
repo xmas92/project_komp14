@@ -10,18 +10,20 @@
 
     <property name="main-class"  value="compiler.EntryPoint"/>
 	<property name="main-class-jvm" value="mjc.JVMMain"/>
+	<property name="main-class-arm" value="mjc.ARMMain"/>
 
     <target name="clean">
         <delete dir="${build.dir}"/>
         <delete dir="${lexer.dir}"/>
-		<delete file="${ant.project.name}.jar"/>
-		<delete verbose="true"> 
-			<fileset dir="." includes="*.j"/>
-		</delete>
-		<delete verbose="true"> 
-			<fileset dir="." includes="*.class"/>
-		</delete>
-		<delete file="mjp.jar"/>
+				<delete file="${ant.project.name}.jar"/>
+				<delete verbose="true"> 
+					<fileset dir="." includes="*.j"/>
+				</delete>
+				<delete verbose="true"> 
+					<fileset dir="." includes="*.class"/>
+				</delete>
+				<delete file="mjp.jar"/>
+				<delete file="armasm.s"/>
     </target>
 
     <target name="javacc">
@@ -50,6 +52,14 @@
 	
     <target name="run-jvm" depends="clean,jar">
         <java classpath="${ant.project.name}.jar" classname="${main-class-jvm}">
+			<arg line="${src.dir}/test.minijava"/>
+			<arg line="-S"/>
+		</java>
+    </target>
+		
+	
+    <target name="run-arm" depends="clean,jar">
+        <java classpath="${ant.project.name}.jar" classname="${main-class-arm}">
 			<arg line="${src.dir}/test.minijava"/>
 			<arg line="-S"/>
 		</java>

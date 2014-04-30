@@ -9,4 +9,14 @@ public class Label {
 	public Label(String s) {
 		label = s;
 	}
+	@Override
+	public int hashCode() {
+		return label.hashCode();
+	}
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Label)
+			return ((Label)o).label.equals(label);
+		return false;
+	}
 }

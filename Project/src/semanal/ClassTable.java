@@ -3,7 +3,6 @@ package semanal;
 import java.util.HashMap;
 
 import compiler.util.Report;
-
 import ast.MainClass;
 import ast.Program;
 import ast.declaration.ClassDeclaration;

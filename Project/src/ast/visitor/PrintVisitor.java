@@ -42,8 +42,8 @@ public class PrintVisitor implements GenericVisitor<String, Object> {
 	
 	@Override
 	public String visit(Node n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -135,8 +135,8 @@ public class PrintVisitor implements GenericVisitor<String, Object> {
 
 	@Override
 	public String visit(Expression n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -220,8 +220,8 @@ public class PrintVisitor implements GenericVisitor<String, Object> {
 
 	@Override
 	public String visit(Statement n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -250,8 +250,8 @@ public class PrintVisitor implements GenericVisitor<String, Object> {
 
 	@Override
 	public String visit(Type n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override

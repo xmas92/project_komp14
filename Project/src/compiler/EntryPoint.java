@@ -8,6 +8,8 @@ import ast.Program;
 import ast.visitor.FancyPrintVisitor;
 import ast.visitor.FrameBuilderVisitor;
 import ast.visitor.JasminCodeGeneratorVisitor;
+import ast.visitor.OptimizeExpressionPassOneVisitor;
+import ast.visitor.OptimizeExpressionPassTwoVisitor;
 import ast.visitor.SemanticsVisitor;
 import lexer.MiniJavaParser;
 import lexer.ParseException;
@@ -28,6 +30,8 @@ public final class EntryPoint {
 		// Semantic Analysis Pass
 		ClassTable.BuildClassTable(p);
 		p.accept(new SemanticsVisitor(), null);
+		p.accept(new OptimizeExpressionPassOneVisitor(), null);
+		p.accept(new OptimizeExpressionPassTwoVisitor(), null);
 		// Frame Layout Pass
 		/* Jasmin JVM */
 		p.accept(new FrameBuilderVisitor(), new Frame());

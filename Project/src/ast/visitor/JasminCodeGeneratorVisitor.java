@@ -45,8 +45,8 @@ public class JasminCodeGeneratorVisitor implements
 	}
 	@Override
 	public String visit(Node n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -81,8 +81,8 @@ public class JasminCodeGeneratorVisitor implements
 	}
 	@Override
 	public String visit(Parameter n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -136,8 +136,8 @@ public class JasminCodeGeneratorVisitor implements
 
 	@Override
 	public String visit(VariableDeclaration n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -300,8 +300,8 @@ public class JasminCodeGeneratorVisitor implements
 
 	@Override
 	public String visit(Expression n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -488,8 +488,8 @@ public class JasminCodeGeneratorVisitor implements
 
 	@Override
 	public String visit(Statement n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -516,20 +516,20 @@ public class JasminCodeGeneratorVisitor implements
 
 	@Override
 	public String visit(Type n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public String visit(PrimitiveType n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public String visit(ClassType n, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 }

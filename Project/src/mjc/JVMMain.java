@@ -8,6 +8,8 @@ import actrec.jvm.Frame;
 import ast.Program;
 import ast.visitor.FancyPrintVisitor;
 import ast.visitor.FrameBuilderVisitor;
+import ast.visitor.OptimizeExpressionPassOneVisitor;
+import ast.visitor.OptimizeExpressionPassTwoVisitor;
 import ast.visitor.JasminCodeGeneratorVisitor;
 import ast.visitor.SemanticsVisitor;
 import lexer.MiniJavaParser;
@@ -29,6 +31,8 @@ public final class JVMMain {
 		// Semantic Analysis Pass
 		ClassTable.BuildClassTable(p);
 		p.accept(new SemanticsVisitor(), null);
+		p.accept(new OptimizeExpressionPassOneVisitor(), null);
+		p.accept(new OptimizeExpressionPassTwoVisitor(), null);
 		// Frame Layout Pass
 		/* Jasmin JVM */
 		p.accept(new FrameBuilderVisitor(), new Frame());

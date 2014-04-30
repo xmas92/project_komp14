@@ -41,44 +41,44 @@ public class TypeVisitor implements GenericVisitor<Type, SymbolTable> {
 
 	@Override
 	public Type visit(Node n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(MainClass n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(Parameter n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(Program n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(ClassDeclaration n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(MethodDeclaration n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(VariableDeclaration n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -228,8 +228,8 @@ public class TypeVisitor implements GenericVisitor<Type, SymbolTable> {
 
 	@Override
 	public Type visit(Expression n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
@@ -346,56 +346,56 @@ public class TypeVisitor implements GenericVisitor<Type, SymbolTable> {
 
 	@Override
 	public Type visit(AssignmentStatement n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(IfStatement n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(PrintStatement n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(Statement n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(StatementBlock n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(WhileStatement n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(Type n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(PrimitiveType n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 	@Override
 	public Type visit(ClassType n, SymbolTable arg) {
-		// TODO Auto-generated method stub
-		return null;
+		// Should never happen
+		throw new Error();
 	}
 
 }
