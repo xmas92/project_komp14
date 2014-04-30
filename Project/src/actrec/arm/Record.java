@@ -57,7 +57,7 @@ public class Record extends actrec.Record {
 
 	private int Offset() {
 		if (extendsId == null)
-			return VtableOffset();
+			return (VtableSize() > 0 ? 4 : 0);
 		return records.get(extendsId).Size();
 	}
 
@@ -69,7 +69,7 @@ public class Record extends actrec.Record {
 	@Override
 	public int Size() {
 		if (extendsId == null)
-			return Size + VtableOffset();
+			return Size + (VtableSize() > 0 ? 4 : 0);
 		return records.get(extendsId).Size() + Size;
 	}
 
@@ -81,9 +81,10 @@ public class Record extends actrec.Record {
 	}
 
 	private int VtableOffset() {
-		return (VtableSize() > 0 ? 4 : 0);
+		if (extendsId == null)
+			return 0;
+		return ((Record)records.get(extendsId)).VtableSize();
 	}
-
 	@Override
 	public Access AllocVirtual() {
 		return new InVtable();
@@ -99,15 +100,15 @@ public class Record extends actrec.Record {
 
 		@Override
 		public Exp unEx(Exp obj) {
-			if (offset == 0)
+			if (GetOffset() == 0)
 				return new MEM(new MEM(obj));
 			return new MEM(new BINOP(Operator.Plus, new MEM(obj), new CONST(
-					offset)));
+					GetOffset())));
 		}
 
 		@Override
 		public int GetOffset() {
-			return offset;
+			return offset + VtableOffset();
 		}
 	}
 
