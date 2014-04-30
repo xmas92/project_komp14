@@ -4,6 +4,7 @@ import ir.translate.Procedure;
 
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -110,4 +111,29 @@ public class InstrFlowGraph extends FlowGraph {
 		out.println("}");
 	}
 
+	public void remove(Instr i) {
+		Node n = node(i);
+		for (Node np : n.preds)
+			np.succs = new HashSet<>(n.succs);
+	}
+
+	public void addBefore(Instr ni, Instr i) {
+		Node nn = node(ni);
+		Node n = node(i);
+		nn.preds = new HashSet<>(n.preds);
+		nn.succs = new HashSet<>();
+		nn.succs.add(n);
+		n.preds = new HashSet<>();
+		n.preds.add(nn);
+	}
+
+	public void addAfter(Instr ni, Instr i) {
+		Node nn = node(ni);
+		Node n = node(i);
+		nn.preds = new HashSet<>();
+		nn.preds.add(n);
+		nn.succs = new HashSet<>(nn.succs);
+		n.succs = new HashSet<>();
+		n.succs.add(nn);
+	}
 }

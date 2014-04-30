@@ -4,9 +4,12 @@ import ir.translate.Procedure;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import regalloc.RegAlloc.Edge;
 import actrec.Temp;
+import actrec.TempList;
+import assem.Instr;
 //import assem.Instr;
 //import assem.MOVE;
 import dataflow.InstrFlowGraph;
@@ -18,24 +21,37 @@ public class Liveness extends InterferenceGraph {
 	HashMap<Node, HashSet<Temp>> in = new HashMap<>();
 	HashMap<Node, HashSet<Temp>> out = new HashMap<>();
 	
-	public Liveness(InstrFlowGraph ifg, Procedure proc) {
-		// init every node to 0
-		for(Node n : ifg.nodes()) {
-			in.put(n, new HashSet<Temp>(ifg.use(n)));
-			out.put(n, new HashSet<Temp>());
-		}
+	private TempList Defines(Instr i) {
+		TempList ret = i.defines();
+		return ret == null? new TempList() : ret;
+	}
+	public void iterate() {
 		boolean c = true;
 		while (c) {
 			c = false;
-			for (Node n : ifg.nodes()) {
+			for (Iterator<Instr> it = proc.instrs.descendingIterator(); it.hasNext();) {
+				Instr i = it.next();
+				Node n = ifg.node(i);
 				for (Temp t : out.get(n))
-					if (!ifg.def(n).contains(t))
+					if (!Defines(i).contains(t))
 						c |= in.get(n).add(t); // update in
-				for (Node np : n.succ()) 
+				for (Node np : n.succC()) 
 					for (Temp t : in.get(np))
 						c |= out.get(n).add(t); // update out
 			}
 		}
+	}
+	private InstrFlowGraph ifg;
+	private Procedure proc;
+	public Liveness(InstrFlowGraph ifg, Procedure proc) {
+		// init every node to 0
+		this.ifg = ifg;
+		this.proc = proc;
+		for(Node n : ifg.nodes()) {
+			in.put(n, new HashSet<Temp>(ifg.use(n)));
+			out.put(n, new HashSet<Temp>());
+		}
+		iterate();
 		/*
 		ifg.show(System.out);
 		System.out.println();

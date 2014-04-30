@@ -100,5 +100,6 @@ public final class EntryPoint2 {
 			System.out.print(i.format(new DefaultMap()));
 		// System.out.println(p);
 		//System.out.println(p.accept(new FancyPrintVisitor(), null));
+		System.out.print("");
 	}
 }

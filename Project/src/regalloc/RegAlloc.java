@@ -134,8 +134,8 @@ public class RegAlloc implements TempMap {
 
 	private void RewriteProgram() {
 		HashSet<Node> newTemps = new HashSet<>();
-		for (Instr i : proc.instrs) {
-			for (Node n : coalescedNodesBeforeSpill) {
+		for (Node n : coalescedNodesBeforeSpill) {
+			for (Instr i : proc.instrs) {
 				i.CoalesceTemp(liveness.gtemp(n), liveness.gtemp(GetAlias(n)));
 			}
 		}
@@ -143,8 +143,10 @@ public class RegAlloc implements TempMap {
 		for (Instr i : proc.instrs) {
 			if (i instanceof MOVE) {
 				MOVE m = (MOVE) i;
-				if (m.dst.equals(m.src))
+				if (m.dst.equals(m.src)) {
+					ifg.remove(i);
 					continue;
+				}
 			}
 			nInstrs.add(i);
 		}
@@ -160,7 +162,9 @@ public class RegAlloc implements TempMap {
 					String str = String.format(
 							"ldr `d0, [ `s0, #-%d ]\t@ Reload",
 							proc.frame.SpillOffset() + spillSize);
-					nInstrs.add(new OPER(str, L(vi), L(proc.frame.FP())));
+					Instr ni = new OPER(str, L(vi), L(proc.frame.FP()));
+					ifg.addBefore(ni,i);
+					nInstrs.add(ni);
 					i.ChangeUse(liveness.gtemp(v), vi);
 				}
 				nInstrs.add(i);
@@ -171,7 +175,9 @@ public class RegAlloc implements TempMap {
 					String str = String.format(
 							"str `s0, [ `s1, #-%d ]\t@ Spill",
 							proc.frame.SpillOffset() + spillSize);
-					nInstrs.add(new OPER(str, null, L(vi, proc.frame.FP())));
+					Instr ni = new OPER(str, null, L(vi, proc.frame.FP()));
+					ifg.addAfter(ni,i);
+					nInstrs.add(ni);
 					i.ChangeDef(liveness.gtemp(v), vi);
 				}
 			}
@@ -205,7 +211,7 @@ public class RegAlloc implements TempMap {
 		for (Node n : coalescedNodes)
 			color.put(liveness.gtemp(n), color.get(liveness.gtemp(GetAlias(n))));
 	}
-	
+
 	private HashSet<Node> coalescedNodesBeforeSpill = new HashSet<>();
 
 	private void SelectSpill() {
@@ -340,7 +346,8 @@ public class RegAlloc implements TempMap {
 	}
 
 	private boolean OK(Node t, Node r) {
-		return Degree(t) < K || precolored.contains(t) || adjSet.contains(new Edge(t, r));
+		return Degree(t) < K || precolored.contains(t)
+				|| adjSet.contains(new Edge(t, r));
 	}
 
 	private int Degree(Node t) {
@@ -427,10 +434,22 @@ public class RegAlloc implements TempMap {
 		ret.retainAll(rem);
 		return ret;
 	}
-	private boolean firstTimeAround = true;
+
+	private boolean firstTimeAroundBuild = true;
+
+	private TempList Defines(Instr i) {
+		TempList ret = i.defines();
+		return ret == null? new TempList() : ret;
+	}
+
+	private TempList Uses(Instr i) {
+		TempList ret = i.uses();
+		return ret == null? new TempList() : ret;
+	}
+
 	private void Build() {
 		// Setup Precolored
-		for (Temp t : registers) 
+		for (Temp t : registers)
 			precolored.add(liveness.tnode(t));
 		// Build
 		HashSet<Temp> live = liveness.out.get(ifg.node(proc.instrs.getLast()));
@@ -440,9 +459,9 @@ public class RegAlloc implements TempMap {
 			Instr I = it.next();
 			if (I instanceof MOVE) {
 				MOVE M = (MOVE) I;
-				live.removeAll(ifg.use(ifg.node(I)));
-				HashSet<Temp> union = new HashSet<>(ifg.def(ifg.node(I)));
-				union.addAll(ifg.use(ifg.node(I)));
+				live.removeAll(Uses(I));
+				HashSet<Temp> union = new HashSet<>(Defines(I));
+				union.addAll(Uses(I));
 				for (Temp n : union) {
 					if (!moveList.containsKey(liveness.tnode(n)))
 						moveList.put(liveness.tnode(n), new HashSet<Edge>());
@@ -453,19 +472,19 @@ public class RegAlloc implements TempMap {
 				worklistMoves.add(new Edge(liveness.tnode(M.dst), liveness
 						.tnode(M.src)));
 			}
-			live.addAll(ifg.def(ifg.node(I)));
-			for (Temp d : ifg.def(ifg.node(I)))
+			live.addAll(Defines(I));
+			for (Temp d : Defines(I))
 				for (Temp l : live)
-					AddEdge(liveness.tnode(l),liveness.tnode(d));
-			live.removeAll(ifg.def(ifg.node(I)));
-			live.addAll(ifg.use(ifg.node(I)));
+					AddEdge(liveness.tnode(l), liveness.tnode(d));
+			live.removeAll(Defines(I));
+			live.addAll(Uses(I));
 		}
 		// Setup Inital
-		if (firstTimeAround)
+		if (firstTimeAroundBuild)
 			for (Node n : liveness.nodes())
 				if (!precolored.contains(n))
 					initial.add(n);
-		firstTimeAround = false;
+		firstTimeAroundBuild = false;
 	}
 
 	private void AddEdge(Node u, Node v) {
@@ -492,12 +511,17 @@ public class RegAlloc implements TempMap {
 	}
 
 	private InstrFlowGraph ifg;
+	private boolean firstTimeAroundLivenessAnalysis = true;
 
 	private void LivenessAnalysis() {
-		ifg = new InstrFlowGraph(proc);
-		// ifg.show(System.out);
-		liveness = new Liveness(ifg, proc);
-		// liveness.show(System.out);
+		if (firstTimeAroundLivenessAnalysis) {
+			ifg = new InstrFlowGraph(proc);
+			// ifg.show(System.out);
+			liveness = new Liveness(ifg, proc);
+			// liveness.show(System.out);
+		} else {
+			liveness.iterate();
+		}
 	}
 
 	@Override

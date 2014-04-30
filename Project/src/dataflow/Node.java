@@ -19,6 +19,9 @@ public class Node {
 	public HashSet<Node> succ() {
 		return (HashSet<Node>) succs.clone();
 	}
+	public HashSet<Node> succC() {
+		return succs;
+	}
 
 	@SuppressWarnings("unchecked")
 	public HashSet<Node> pred() {
