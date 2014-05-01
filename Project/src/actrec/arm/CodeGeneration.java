@@ -351,7 +351,7 @@ public class CodeGeneration {
 			Temp e2t = munchExp(e2);
 			Emit(new OPER("cmp `s0,`s1", null, L(e1t, e2t)));
 			String str = String.format("b%s %s", condc, t.label, f.label);
-			Emit(new OPER(str, null, null, t));
+			Emit(new OPER(str, null, null, t, f));
 		}
 	}
 
