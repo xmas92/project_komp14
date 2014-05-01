@@ -76,11 +76,11 @@ public class RelCx extends Cx {
 		case Less:
 		case LessEq:
 			/*
-			 * 	if e2lo op e1lo (unsinged)
+			 * 	if e1lo op e2lo (unsinged)
 			 *		t1 = true;
 			 *	else
 			 *		t1 = false;
-			 *	if e2hi op e1hi (signed)
+			 *	if e1hi op e2hi (signed)
 			 *		t2 = true;
 			 *	else
 			 *		t2 = false;

@@ -67,19 +67,19 @@ public class Frame extends actrec.Frame implements TempMap {
 				a1 = new InReg(new Temp());
 				formalwords++;
 			} else 
-				a1 = new InFrame(8 + (++formalwords - 4) * 4);
+				a1 = new InFrame(8 + (formalwords++ - 4) * 4);
 			if (formalwords < 4) {
 				a2 = new InReg(new Temp());
 				formalwords++;
 			} else 
-				a2 = new InFrame(8 + (++formalwords - 4) * 4);
+				a2 = new InFrame(8 + (formalwords++ - 4) * 4);
 			ret = new DoubleWordAccess(a1, a2);
 		} else {
 			if (formalwords < 4) {
 				ret = new InReg(new Temp());
 				formalwords++;
 			} else 
-				ret = new InFrame(8 + (++formalwords - 4) * 4);
+				ret = new InFrame(8 + (formalwords++ - 4) * 4);
 		}
 		formals.add(ret);
 		return ret;
@@ -163,9 +163,9 @@ public class Frame extends actrec.Frame implements TempMap {
 			} else
 				prologue.add(new MOVE("mov `d0, `s0", ((InReg)a).t, Hardware.argRegs[i++]));
 		}
+		epilogue.add(new LABEL(proc.done.label + ":", proc.done));
 		if (frameLabel.label.equals("main"))
 			epilogue.add(new OPER("ldr `d0, =0", new TempList(Hardware.r0, null), null));
-		epilogue.add(new LABEL(proc.done.label + ":", proc.done));
 		epilogue.add(new OPER("add `d0, `s0, #`k0", new TempList(Hardware.SP, null), new TempList(Hardware.SP, null)));
 		epilogue.add(new OPER("pop { r4-r6, r8-r11 }", Hardware.calleeSavedList, null));
 		epilogue.add(new MOVE("mov `d0, `s0", Hardware.SP, Hardware.FP));

@@ -7,9 +7,11 @@ import java.util.NoSuchElementException;
 public class TempList implements Collection<Temp>{
 	public Temp head;
 	public TempList tail;
+	public TempList parent;
 	public TempList(Temp h, TempList t) {
 		head = h;
 		tail = t;
+		if (tail != null) tail.parent = this;
 	}
 	public TempList() {}
 	@Override
@@ -32,6 +34,33 @@ public class TempList implements Collection<Temp>{
 			else if (tail != null)
 				return tail.contains(o);
 		return false;
+	}
+	public Iterator<Temp> descendingIterator() {
+		return new  Iterator<Temp>() {
+			TempList next = selfLast();
+			@Override
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public Temp next() {
+				if (next == null || next.head == null)
+					throw new NoSuchElementException();
+				Temp ret = next.head;
+				next = next.parent;
+				return ret;
+			}
+			
+			@Override
+			public boolean hasNext() {
+				return next != null && next.head != null;
+			}
+		};
+	}
+	protected TempList selfLast() {
+		if (tail == null) return this;
+		return tail.selfLast();
 	}
 	@Override
 	public Iterator<Temp> iterator() {

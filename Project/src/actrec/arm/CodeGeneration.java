@@ -151,7 +151,7 @@ public class CodeGeneration {
 					Temp addr = munchExp(b);
 					String str = String.format("str `s0, [ `s1 ]");
 					Emit(new OPER(str, null, L(s.temp, addr)));
-				}
+				} 
 			} else if (d.e instanceof TEMP) {
 				Temp addr = ((TEMP) d.e).temp;
 				String str = String.format("str `s0, [ `s1 ]");
@@ -203,20 +203,27 @@ public class CodeGeneration {
 		} else if (a instanceof TEMP && e instanceof CALL) {
 			TEMP t = (TEMP) a;
 			CALL c = (CALL) e;
+			TempList args = munchArgs(c.explist);
 			if (c.f instanceof NAME) {
 				NAME n = (NAME) c.f;
-				TempList args = munchArgs(c.explist);
 				Emit(new OPER("bl " + n.label.label, Hardware.calldefs, args));
 				Emit(new assem.MOVE("mov `d0, `s0", t.temp, frame.RV(0)));
 			} else if (c.f instanceof MEM) {
 				MEM m = (MEM) c.f;
 				// TODO figure out order here? calculate function ptr first or
 				// args?
-				TempList args = munchArgs(c.explist);
 				Temp mt = munchMEM(m.e);
 				Emit(new OPER("blx `s0", Hardware.calldefs, new TempList(mt,
 						args)));
 				Emit(new assem.MOVE("mov `d0, `s0", t.temp, frame.RV(0)));
+			} else if (c.f instanceof TEMP) {
+				TEMP tf = (TEMP) c.f;
+				Temp mt = tf.temp;
+				Emit(new OPER("blx `s0", Hardware.calldefs, new TempList(mt,
+						args)));
+				Emit(new assem.MOVE("mov `d0, `s0", t.temp, frame.RV(0)));
+			} else {
+				throw new Error("CG Tile:\n" + a + "\n" + e);
 			}
 		} else if (a instanceof TEMP && e instanceof CONST) {
 			TEMP t = (TEMP) a;
@@ -552,12 +559,10 @@ public class CodeGeneration {
 			Access argN = frame.ArgAccess(n++);
 			Exp a = argN.unEx(new TEMP(Hardware.SP));
 			munchMOVE(a, new TEMP(et)); // Move expression into arg slot
-			if (a instanceof TEMP) {
-				if (t == null)
-					ret = t = new TempList(et, null);
-				else
-					t = t.tail = new TempList(et, null);
-			}
+			if (t == null)
+				ret = t = new TempList(et, null);
+			else
+				t = t.tail = new TempList(et, null);
 		}
 		return ret;
 	}

@@ -70,9 +70,6 @@ public final class EntryPoint2 {
 			System.out.print(proc);
 			System.out.print(".ltorg\t@ dump literal pool\n");
 			System.out.print("\n");
-//			InstrFlowGraph ifg = new InstrFlowGraph(proc);
-//			Liveness liveness = new Liveness(ifg, proc);
-//			liveness.show(System.out);
 //			try {
 //				InstrFlowGraph ifg = new InstrFlowGraph(proc);
 //				File DOTFILE = new File(proc.frame.frameLabel.label + "_graph.dot");
