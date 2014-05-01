@@ -159,22 +159,32 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 				return new Ex(currentFrame.ExternalCall("exit", new ExpList(
 						new CONST(1), null)));
 
+		Temp idxTmp = new Temp();
+		Temp arrTmp = new Temp();
+
 		Exp elementsize = new CONST(n.IsDoubleWord() ? 8 : 4);
-		Exp o = new BINOP(Operator.Times, idx.unEx(), elementsize);
+		Exp o = idx.unEx();
+		Exp a = arr.unEx();
+		if (!n.StaticCheck) {
+			o = new TEMP(idxTmp);
+			a = new TEMP(arrTmp);
+		}
+		o = new BINOP(Operator.Times, o, elementsize);
 		o = new BINOP(Operator.Plus, o, new CONST(4));
-		Exp addr = new BINOP(Operator.Plus, arr.unEx(), o);
+		Exp addr = new BINOP(Operator.Plus, a, o);
 		Exp access = new MEM(addr);
 
 		if (n.StaticCheck)
-			if (!n.ArrayBoundException)
-				if (!n.IsDoubleWord())
-					return new Ex(access);
-				else
-					return new Ex(access, new MEM(new BINOP(Operator.Plus,
-							addr, new CONST(4))));
+			if (!n.IsDoubleWord())
+				return new Ex(access);
+			else
+				return new Ex(access, new MEM(new BINOP(Operator.Plus, addr,
+						new CONST(4))));
 
 		// Array Bound Check
-		Stm test = currentFrame.ArrayBoundCheck(arr.unEx(), idx.unEx());
+		Stm test = currentFrame.ArrayBoundCheck(new ESEQ(new MOVE(new TEMP(
+				arrTmp), arr.unEx()), new TEMP(arrTmp)), new ESEQ(new MOVE(
+				new TEMP(idxTmp), idx.unEx()), new TEMP(idxTmp)));
 
 		if (!n.IsDoubleWord())
 			return new Ex(new ESEQ(test, access));
@@ -222,31 +232,23 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		switch (n.op) {
 		case And:
 			ret = new Temp();
-			return new Ex(
-					new ESEQ(
-						new SEQ(new CJUMP(Operator.NotEq, e1.unEx(),new CONST(0), evalNext, fa),
-						new SEQ(new LABEL(evalNext),
-						new SEQ(new CJUMP(Operator.NotEq, e2.unEx(), new CONST(0), tr, fa), 
-						new SEQ(new LABEL(fa), 
-						new SEQ(new MOVE(new TEMP(ret), new CONST(0)), 
-						new SEQ(new JUMP(ex),
-						new SEQ(new LABEL(tr), 
-						new SEQ(new MOVE(new TEMP(ret), new CONST(1)), 
-						        new LABEL(ex))))))))),
+			return new Ex(new ESEQ(new SEQ(new CJUMP(Operator.NotEq, e1.unEx(),
+					new CONST(0), evalNext, fa), new SEQ(new LABEL(evalNext),
+					new SEQ(new CJUMP(Operator.NotEq, e2.unEx(), new CONST(0),
+							tr, fa), new SEQ(new LABEL(fa), new SEQ(new MOVE(
+							new TEMP(ret), new CONST(0)), new SEQ(new JUMP(ex),
+							new SEQ(new LABEL(tr), new SEQ(new MOVE(new TEMP(
+									ret), new CONST(1)), new LABEL(ex))))))))),
 					new TEMP(ret)));
 		case Or:
 			ret = new Temp();
-			return new Ex(
-					new ESEQ(
-						new SEQ(new CJUMP(Operator.NotEq, e1.unEx(),new CONST(0), tr, evalNext),
-						new SEQ(new LABEL(evalNext),
-						new SEQ(new CJUMP(Operator.NotEq, e2.unEx(), new CONST(0),tr, fa), 
-						new SEQ(new LABEL(fa), 
-						new SEQ(new MOVE(new TEMP(ret), new CONST(0)), 
-						new SEQ(new JUMP(ex),
-						new SEQ(new LABEL(tr), 
-						new SEQ(new MOVE(new TEMP(ret), new CONST(1)), 
-								new LABEL(ex))))))))),
+			return new Ex(new ESEQ(new SEQ(new CJUMP(Operator.NotEq, e1.unEx(),
+					new CONST(0), tr, evalNext), new SEQ(new LABEL(evalNext),
+					new SEQ(new CJUMP(Operator.NotEq, e2.unEx(), new CONST(0),
+							tr, fa), new SEQ(new LABEL(fa), new SEQ(new MOVE(
+							new TEMP(ret), new CONST(0)), new SEQ(new JUMP(ex),
+							new SEQ(new LABEL(tr), new SEQ(new MOVE(new TEMP(
+									ret), new CONST(1)), new LABEL(ex))))))))),
 					new TEMP(ret)));
 		case Plus:
 			if (!n.IsDoubleWord())
@@ -390,35 +392,32 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		// Obviously fails if array size is over half max int
 		if (n.IsDoubleWord())
 			num = new BINOP(Operator.Times, num, new CONST(2));
-		num = new ESEQ(new MOVE(new TEMP(t), num),new TEMP(t));
+		num = new ESEQ(new MOVE(new TEMP(t), num), new TEMP(t));
 		explist = new ExpList(new BINOP(Operator.Plus, num, new CONST(1)),
 				explist);
 		explist = new ExpList(new CONST(4), explist);
 		Exp call = currentFrame.ExternalCall("calloc", explist);
-		return new Ex(
-				new ESEQ(
-				new SEQ(new MOVE(new TEMP(ret),call),
-						new MOVE(new MEM(new TEMP(ret)), new TEMP(t))),
-				new TEMP(ret)));
+		return new Ex(new ESEQ(new SEQ(new MOVE(new TEMP(ret), call), new MOVE(
+				new MEM(new TEMP(ret)), new TEMP(t))), new TEMP(ret)));
 	}
 
 	@Override
 	public Tr visit(NewClassExpression n, Object arg) {
 		ExpList explist = null;
 		// Size of the object in bytes
-		if (Record.records.get(n.id).Size() == 0 )
+		if (Record.records.get(n.id).Size() == 0)
 			return new Ex(new CONST(0));
 		explist = new ExpList(new CONST(Record.records.get(n.id).Size()),
 				explist);
 		explist = new ExpList(new CONST(1), explist);
 		Temp t = new Temp();
-		if (Record.records.get(n.id).VtableSize() == 0) 
+		if (Record.records.get(n.id).VtableSize() == 0)
 			return new Ex(new ESEQ(new MOVE(new TEMP(t),
-					currentFrame.ExternalCall("calloc", explist)), new TEMP(t))); 
+					currentFrame.ExternalCall("calloc", explist)), new TEMP(t)));
 		return new Ex(new ESEQ(new SEQ(new MOVE(new TEMP(t),
 				currentFrame.ExternalCall("calloc", explist)), new MOVE(
-				new MEM(new TEMP(t)), currentFrame.GetDataLabel(Record.records.get(n.id)
-						.GetVTable()))), new TEMP(t)));
+				new MEM(new TEMP(t)), currentFrame.GetDataLabel(Record.records
+						.get(n.id).GetVTable()))), new TEMP(t)));
 	}
 
 	@Override
@@ -466,23 +465,28 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		Tr idx = n.index.accept(this, arg);
 		Exp arr = n.decl.access.unEx(fp);
 
+		Temp idxTmp = new Temp();
+
 		Exp elementsize = new CONST(n.decl.type.IsDoubleWordInnerType() ? 8 : 4);
-		Exp o = new BINOP(Operator.Times, idx.unEx(), elementsize);
+		Exp o = idx.unEx();
+		if (!n.StaticCheck)
+			o = new TEMP(idxTmp);
+		o = new BINOP(Operator.Times, o, elementsize);
 		o = new BINOP(Operator.Plus, o, new CONST(4));
 		Exp addr = new BINOP(Operator.Plus, arr, o);
 		MEM access = new MEM(addr);
 
 		if (n.StaticCheck)
-			if (!n.ArrayBoundException)
-				if (!n.decl.type.IsDoubleWordInnerType())
-					return new Nx(new MOVE(access, rhs.unEx()));
-				else
-					return new Nx(new SEQ(new MOVE(access, rhslo),
-							new MOVE(new MEM(new BINOP(Operator.Plus, addr,
-									new CONST(4))), rhshi)));
+			if (!n.decl.type.IsDoubleWordInnerType())
+				return new Nx(new MOVE(access, rhs.unEx()));
+			else
+				return new Nx(new SEQ(new MOVE(access, rhslo), new MOVE(
+						new MEM(new BINOP(Operator.Plus, addr, new CONST(4))),
+						rhshi)));
 
 		// Array Bound Check
-		Stm test = currentFrame.ArrayBoundCheck(arr, idx.unEx());
+		Stm test = currentFrame.ArrayBoundCheck(arr, new ESEQ(new MOVE(
+				new TEMP(idxTmp), idx.unEx()), new TEMP(idxTmp)));
 
 		if (!n.decl.type.IsDoubleWordInnerType())
 			return new Nx(new SEQ(test, new MOVE(access, rhs.unEx())));
@@ -513,8 +517,10 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		Exp str;
 		Tr val = n.expr.accept(this, arg);
 		if (n.expr instanceof BooleanLiteralExpression) {
-			str = currentFrame.GetPrintStrBool(((BooleanLiteralExpression)n.expr).value);
-			return new Nx(new EXPS(currentFrame.ExternalCall("printf", new ExpList(str, null))));
+			str = currentFrame
+					.GetPrintStrBool(((BooleanLiteralExpression) n.expr).value);
+			return new Nx(new EXPS(currentFrame.ExternalCall("printf",
+					new ExpList(str, null))));
 		} else if (n.type.IsType(Primitive.Boolean)) {
 			return new Nx(currentFrame.GetPrintStrBool(val.unEx()));
 		}
@@ -525,7 +531,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		if (!n.type.IsDoubleWord())
 			t = t.tail = new ExpList(val.unEx(), null);
 		else {
-			t = t.tail = new ExpList(new CONST(0), null); // padding
+			// t = t.tail = new ExpList(new CONST(0), null); // padding
 			t = t.tail = new ExpList(val.unExLo(), null);
 			t = t.tail = new ExpList(val.unExHi(), null);
 		}
@@ -558,12 +564,9 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		Label cond = new Label();
 		Label loop = new Label();
 		Label exit = new Label();
-		return new Nx(new SEQ(new LABEL(cond), 
-					  new SEQ(co.unCx(loop, exit),
-					  new SEQ(new LABEL(loop), 
-					  new SEQ(lo.unNx(), 
-					  new SEQ(new JUMP(cond), 
-							  new LABEL(exit)))))));
+		return new Nx(new SEQ(new LABEL(cond), new SEQ(co.unCx(loop, exit),
+				new SEQ(new LABEL(loop), new SEQ(lo.unNx(), new SEQ(new JUMP(
+						cond), new LABEL(exit)))))));
 	}
 
 	@Override
