@@ -552,15 +552,13 @@ public class CodeGeneration {
 	private TempList munchArgs(ExpList list) {
 		TempList ret = null;
 		TempList t = ret;
-		LinkedList<Temp> exps = new LinkedList<>();
+		int n = 0;
+//		LinkedList<Temp> exps = new LinkedList<>();
 		while (list != null) {
 			Temp et = munchExp(list.head);
-			exps.addLast(et);
+//			exps.addLast(et);
 			list = list.tail;
-		}
-		int n = exps.size();
-		for (Temp et : exps) {
-			Access argN = frame.ArgAccess(--n);
+			Access argN = frame.ArgAccess(n++);
 			Exp a = argN.unEx(new TEMP(Hardware.SP));
 			munchMOVE(a, new TEMP(et)); // Move expression into arg slot
 			if (a instanceof TEMP) {
@@ -571,6 +569,19 @@ public class CodeGeneration {
 					t = t.tail = new TempList(at, null);
 			}
 		}
+//		n = exps.size();
+//		for (Temp et : exps) {
+//			Access argN = frame.ArgAccess(--n);
+//			Exp a = argN.unEx(new TEMP(Hardware.SP));
+//			munchMOVE(a, new TEMP(et)); // Move expression into arg slot
+//			if (a instanceof TEMP) {
+//				Temp at = ((TEMP)a).temp;
+//				if (t == null)
+//					ret = t = new TempList(at, null);
+//				else
+//					t = t.tail = new TempList(at, null);
+//			}
+//		}
 		return ret;
 	}
 }
