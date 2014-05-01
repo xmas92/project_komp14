@@ -196,32 +196,26 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 	public Tr visit(BinaryExpression n, Object arg) {
 		Tr e1 = n.e1.accept(this, arg);
 		Tr e2 = n.e2.accept(this, arg);
+		
 		Exp e1lo = e1.unExLo();
-		Exp e1hi;
-		Temp e1lotmp = new Temp();
-		// Should only eval e1 value once but we use it multiple times move to
-		// new temp
-		// e1lo = new TEMP(e1lotmp); after first use
-		if (n.op == Operator.Times || n.e1promote)
-			e1lo = new ESEQ(new MOVE(new TEMP(e1lotmp), e1lo),
-					new TEMP(e1lotmp));
+		Exp e1hi = e1.unExHi();;
 		if (n.e1promote) { // Sign Extend
-			e1hi = new BINOP(Operator.ASR, new TEMP(e1lotmp), new CONST(31));
-		} else
-			e1hi = e1.unExHi();
+			e1hi = new BINOP(Operator.ASR, e1lo, new CONST(31));
+		}
+		
 		Exp e2lo = e2.unExLo();
-		Exp e2hi;
-		Temp e2lotmp = new Temp();
-		// Should only eval e2 value once but we use it multiple times move to
-		// new temp
-		// e2lo = new TEMP(e2lotmp); after first use
-		if (n.op == Operator.Times || n.e2promote)
-			e2lo = new ESEQ(new MOVE(new TEMP(e2lotmp), e2lo),
-					new TEMP(e2lotmp));
+		Exp e2hi = e2.unExHi();
 		if (n.e2promote) { // Sign Extend
-			e2hi = new BINOP(Operator.ASR, new TEMP(e2lotmp), new CONST(31));
-		} else
-			e2hi = e2.unExHi();
+			e2hi = new BINOP(Operator.ASR, e2lo, new CONST(31));
+		} 
+		Temp e1loT = new Temp();
+		Temp e1hiT = new Temp();
+		Temp e2loT = new Temp();
+		Temp e2hiT = new Temp();
+		Stm setup = new SEQ(new MOVE(new TEMP(e1loT), e1lo),
+					new SEQ(new MOVE(new TEMP(e1hiT), e1hi),
+					new SEQ(new MOVE(new TEMP(e2loT), e2lo),
+							new MOVE(new TEMP(e2hiT), e2hi))));
 		Temp rlo;
 		Temp rhi;
 		Temp ret;
@@ -257,9 +251,9 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 			// adc rhi e1hi e2hi
 			rlo = new Temp();
 			rhi = new Temp();
-			Stm add = new SEQ(new MOVE(new TEMP(rlo), new BINOP(Operator.ADDS,
-					e1lo, e2lo)), new MOVE(new TEMP(rhi), new BINOP(
-					Operator.ADC, e1hi, e2hi)));
+			Stm add = new SEQ(setup, new SEQ(new MOVE(new TEMP(rlo), new BINOP(Operator.ADDS,
+					new TEMP(e1loT), new TEMP(e2loT))), new MOVE(new TEMP(rhi), new BINOP(
+					Operator.ADC, new TEMP(e1hiT), new TEMP(e2hiT)))));
 			return new Ex(new ESEQ(add, new TEMP(rlo)), new TEMP(rhi));
 		case Minus:
 			if (!n.IsDoubleWord())
@@ -268,9 +262,9 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 			// sbc rhi e1hi e2hi
 			rlo = new Temp();
 			rhi = new Temp();
-			Stm sub = new SEQ(new MOVE(new TEMP(rlo), new BINOP(Operator.SUBS,
-					e1lo, e2lo)), new MOVE(new TEMP(rhi), new BINOP(
-					Operator.SBC, e1hi, e2hi)));
+			Stm sub = new SEQ(setup, new SEQ(new MOVE(new TEMP(rlo), new BINOP(Operator.SUBS,
+					new TEMP(e1loT), new TEMP(e2loT))), new MOVE(new TEMP(rhi), new BINOP(
+					Operator.SBC, new TEMP(e1hiT), new TEMP(e2hiT)))));
 			return new Ex(new ESEQ(sub, new TEMP(rlo)), new TEMP(rhi));
 		case Times:
 			// umull rlo rhi e1lo e2lo
@@ -282,12 +276,12 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 				return new Ex(new BINOP(n.op, e1.unEx(), e2.unEx()));
 			rlo = new Temp();
 			rhi = new Temp();
-			Exp t = new BINOP(Operator.Times, e1hi, new TEMP(e2lotmp));
+			Exp t = new BINOP(Operator.Times, new TEMP(e1hiT), new TEMP(e2loT));
 			Exp hi = new BINOP(Operator.Plus, t, new TEMP(rhi));
-			t = new BINOP(Operator.Times, new TEMP(e1lotmp), e2hi);
+			t = new BINOP(Operator.Times, new TEMP(e1loT), new TEMP(e2hiT));
 			hi = new BINOP(Operator.Plus, t, hi);
-			Stm mul = new SEQ(new UMULL(new TEMP(rlo), new TEMP(rhi), e1lo,
-					e2lo), new MOVE(new TEMP(rhi), hi));
+			Stm mul = new SEQ(setup, new SEQ(new UMULL(new TEMP(rlo), new TEMP(rhi), new TEMP(e1loT),
+					new TEMP(e2loT)), new MOVE(new TEMP(rhi), hi)));
 			return new Ex(new ESEQ(mul, new TEMP(rlo)), new TEMP(rhi));
 		case Eq:
 		case Greater:
