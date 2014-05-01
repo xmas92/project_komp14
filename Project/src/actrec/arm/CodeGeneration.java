@@ -563,11 +563,13 @@ public class CodeGeneration {
 			Access argN = frame.ArgAccess(--n);
 			Exp a = argN.unEx(new TEMP(Hardware.SP));
 			munchMOVE(a, new TEMP(et)); // Move expression into arg slot
-			if (a instanceof TEMP)
+			if (a instanceof TEMP) {
+				Temp at = ((TEMP)a).temp;
 				if (t == null)
-					ret = t = new TempList(et, null);
+					ret = t = new TempList(at, null);
 				else
-					t = t.tail = new TempList(et, null);
+					t = t.tail = new TempList(at, null);
+			}
 		}
 		return ret;
 	}
