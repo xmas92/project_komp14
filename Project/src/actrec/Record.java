@@ -11,4 +11,6 @@ public abstract class Record {
 	public abstract Access AllocVirtual();
 	public abstract int VtableSize();
 	public abstract Label GetVTable();
+	public abstract boolean HasVTable();
+	public abstract int FieldSize();
 }

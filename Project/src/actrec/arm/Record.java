@@ -57,8 +57,15 @@ public class Record extends actrec.Record {
 
 	private int Offset() {
 		if (extendsId == null)
-			return (VtableSize() > 0 ? 4 : 0);
-		return records.get(extendsId).Size();
+			return (HasVTable() ? 4 : 0);
+		return records.get(extendsId).FieldSize() + (HasVTable() ? 4 : 0);
+	}
+
+	@Override
+	public boolean HasVTable() {
+		if (extendsId == null)
+			return vtableSize > 0;
+		return vtableSize > 0 || records.get(extendsId).HasVTable();
 	}
 
 	@Override
@@ -68,9 +75,14 @@ public class Record extends actrec.Record {
 
 	@Override
 	public int Size() {
+		return FieldSize() + (HasVTable() ? 4 : 0);
+	}
+
+	@Override
+	public int FieldSize() {
 		if (extendsId == null)
-			return Size + (VtableSize() > 0 ? 4 : 0);
-		return records.get(extendsId).Size() + Size;
+			return Size;
+		return records.get(extendsId).FieldSize() + Size;
 	}
 
 	@Override
@@ -83,8 +95,9 @@ public class Record extends actrec.Record {
 	private int VtableOffset() {
 		if (extendsId == null)
 			return 0;
-		return ((Record)records.get(extendsId)).VtableSize();
+		return ((Record) records.get(extendsId)).VtableSize();
 	}
+
 	@Override
 	public Access AllocVirtual() {
 		return new InVtable();

@@ -123,6 +123,18 @@ public class Frame extends actrec.Frame {
 			// Should never happen
 			throw new Error();
 		}
+
+		@Override
+		public boolean HasVTable() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public int FieldSize() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
 		
 	}
 
