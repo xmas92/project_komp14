@@ -442,27 +442,27 @@ public class RegAlloc implements TempMap {
 		return ret == null? new TempList() : ret;
 	}
 
-	private TempList Uses(Instr i) {
-		TempList ret = i.uses();
-		return ret == null? new TempList() : ret;
-	}
+//	private TempList Uses(Instr i) {
+//		TempList ret = i.uses();
+//		return ret == null? new TempList() : ret;
+//	}
 
 	private void Build() {
 		// Setup Precolored
 		for (Temp t : registers)
 			precolored.add(liveness.tnode(t));
 		// Build
-		HashSet<Temp> live = liveness.out.get(ifg.node(proc.instrs.getLast()));
+//		HashSet<Temp> live = liveness.out.get(ifg.node(proc.instrs.getLast()));
 		// check if it is uses/defs or in/out :)
 		for (Iterator<Instr> it = proc.instrs.descendingIterator(); it
 				.hasNext();) {
 			Instr I = it.next();
 			if (I instanceof MOVE) {
 				MOVE M = (MOVE) I;
-				live.removeAll(Uses(I));
-				HashSet<Temp> union = new HashSet<>(Defines(I));
-				union.addAll(Uses(I));
-				for (Temp n : union) {
+//				live.removeAll(Uses(I));
+//				HashSet<Temp> union = new HashSet<>(Defines(I));
+//				union.addAll(Uses(I));
+				for (Temp n : liveness.out.get(ifg.node(I))) {
 					if (!moveList.containsKey(liveness.tnode(n)))
 						moveList.put(liveness.tnode(n), new HashSet<Edge>());
 					moveList.get(liveness.tnode(n)).add(
@@ -472,12 +472,12 @@ public class RegAlloc implements TempMap {
 				worklistMoves.add(new Edge(liveness.tnode(M.dst), liveness
 						.tnode(M.src)));
 			}
-			live.addAll(Defines(I));
+//			live.addAll(Defines(I));
 			for (Temp d : Defines(I))
-				for (Temp l : live)
+				for (Temp l : liveness.out.get(ifg.node(I)))
 					AddEdge(liveness.tnode(l), liveness.tnode(d));
-			live.removeAll(Defines(I));
-			live.addAll(Uses(I));
+//			live.removeAll(Defines(I));
+//			live.addAll(Uses(I));
 		}
 		// Setup Inital
 		if (firstTimeAroundBuild)
