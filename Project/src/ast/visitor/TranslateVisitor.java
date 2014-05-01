@@ -525,6 +525,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		if (!n.type.IsDoubleWord())
 			t = t.tail = new ExpList(val.unEx(), null);
 		else {
+			t = t.tail = new ExpList(new CONST(0), null); // padding
 			t = t.tail = new ExpList(val.unExLo(), null);
 			t = t.tail = new ExpList(val.unExHi(), null);
 		}
@@ -557,9 +558,12 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		Label cond = new Label();
 		Label loop = new Label();
 		Label exit = new Label();
-		return new Nx(new SEQ(new LABEL(cond), new SEQ(co.unCx(loop, exit),
-				new SEQ(new LABEL(loop), new SEQ(lo.unNx(), new SEQ(new JUMP(
-						cond), new LABEL(exit)))))));
+		return new Nx(new SEQ(new LABEL(cond), 
+					  new SEQ(co.unCx(loop, exit),
+					  new SEQ(new LABEL(loop), 
+					  new SEQ(lo.unNx(), 
+					  new SEQ(new JUMP(cond), 
+							  new LABEL(exit)))))));
 	}
 
 	@Override
