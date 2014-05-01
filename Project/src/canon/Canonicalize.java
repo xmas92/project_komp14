@@ -19,16 +19,15 @@ import ir.tree.TEMP;
 
 public class Canonicalize {
 	
-	public static void CanonicalizeProc(Procedure p) {
-		StmList stmlist = Linearize(p.body);
-		BasicBlocks bb = new BasicBlocks(stmlist);
+	public static void CanonicalizeProc(Procedure proc) {
+		proc.canon = Linearize(proc.body);
+		BasicBlocks bb = new BasicBlocks(proc.canon);
 		TraceSchedule ts = new TraceSchedule(bb);
-		stmlist = ts.stms;
-		Optimize.RemoveTrivialJumps(stmlist);
-		Optimize.FixTrivialArithmetic(stmlist);
-		Optimize.RemoveTrivialMoves(stmlist);
-		p.canon = stmlist;
-		p.done = bb.done;
+		proc.canon = ts.stms;
+		Optimize.RemoveTrivialJumps(proc.canon);
+		Optimize.PropagateConstants(proc.canon);
+		Optimize.RemoveTrivialMoves(proc.canon);
+		proc.done = bb.done;
 	}
 	
 	static boolean IsNoOP(Stm s) {
