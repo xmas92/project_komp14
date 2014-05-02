@@ -372,7 +372,7 @@ public class CodeGeneration {
 	 */
 	private void munchUMULL(TEMP rlo, TEMP rhi, Exp e1, Exp e2) {
 		Temp e1t = munchExp(e1);
-		Temp e2t = munchExp(e1);
+		Temp e2t = munchExp(e2);
 		Emit(new OPER("umull `d0, `d1, `s0, `s1", L(rhi.temp, rlo.temp), L(e1t,
 				e2t)));
 	}
@@ -496,11 +496,16 @@ public class CodeGeneration {
 			Temp e2t = ((TEMP) e2).temp;
 			String str = String.format("%s `d0, `s0, `s1", instr);
 			Emit(new OPER(str, L(t), L(e1t, e2t)));
-		} else {
+		} else if (!(e1 instanceof TEMP)) {
 			Temp e1t = munchExp(e1);
+			t = munchBINOP(op, new TEMP(e1t), e2);
+		} else if (e1 instanceof TEMP) {
+			Temp e1t = ((TEMP) e1).temp;
 			Temp e2t = munchExp(e2);
 			String str = String.format("%s `d0, `s0, `s1", instr);
 			Emit(new OPER(str, L(t), L(e1t, e2t)));
+		} else {
+			throw new Error("CG Tile:\n" + e1 + "\n" + e2);
 		}
 		return t;
 	}
