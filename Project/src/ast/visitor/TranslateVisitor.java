@@ -172,14 +172,16 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		o = new BINOP(Operator.Times, o, elementsize);
 		o = new BINOP(Operator.Plus, o, new CONST(4));
 		Exp addr = new BINOP(Operator.Plus, a, o);
-		Exp access = new MEM(addr);
+		Temp addrT = new Temp();
+		Exp access = new ESEQ(new MOVE(new TEMP(addrT), addr), new MEM(
+				new TEMP(addrT)));
 
 		if (n.StaticCheck)
 			if (!n.IsDoubleWord())
-				return new Ex(access);
+				return new Ex(new MEM(addr));
 			else
-				return new Ex(access, new MEM(new BINOP(Operator.Plus, addr,
-						new CONST(4))));
+				return new Ex(access, new MEM(new BINOP(Operator.Plus,
+						new TEMP(addrT), new CONST(4))));
 
 		// Array Bound Check
 		Stm test = currentFrame.ArrayBoundCheck(new ESEQ(new MOVE(new TEMP(
@@ -187,35 +189,36 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 				new TEMP(idxTmp), idx.unEx()), new TEMP(idxTmp)));
 
 		if (!n.IsDoubleWord())
-			return new Ex(new ESEQ(test, access));
+			return new Ex(new ESEQ(test, new MEM(addr)));
 		return new Ex(new ESEQ(test, access), new MEM(new BINOP(Operator.Plus,
-				addr, new CONST(4))));
+				new TEMP(addrT), new CONST(4))));
 	}
 
 	@Override
 	public Tr visit(BinaryExpression n, Object arg) {
 		Tr e1 = n.e1.accept(this, arg);
 		Tr e2 = n.e2.accept(this, arg);
-		
+
 		Exp e1lo = e1.unExLo();
-		Exp e1hi = e1.unExHi();;
+		Exp e1hi = e1.unExHi();
+		;
 		if (n.e1promote) { // Sign Extend
 			e1hi = new BINOP(Operator.ASR, e1lo, new CONST(31));
 		}
-		
+
 		Exp e2lo = e2.unExLo();
 		Exp e2hi = e2.unExHi();
 		if (n.e2promote) { // Sign Extend
 			e2hi = new BINOP(Operator.ASR, e2lo, new CONST(31));
-		} 
+		}
 		Temp e1loT = new Temp();
 		Temp e1hiT = new Temp();
 		Temp e2loT = new Temp();
 		Temp e2hiT = new Temp();
-		Stm setup = new SEQ(new MOVE(new TEMP(e1loT), e1lo),
-					new SEQ(new MOVE(new TEMP(e1hiT), e1hi),
-					new SEQ(new MOVE(new TEMP(e2loT), e2lo),
-							new MOVE(new TEMP(e2hiT), e2hi))));
+		Stm setup = new SEQ(new MOVE(new TEMP(e1loT), e1lo), new SEQ(new MOVE(
+				new TEMP(e1hiT), e1hi), new SEQ(
+				new MOVE(new TEMP(e2loT), e2lo),
+				new MOVE(new TEMP(e2hiT), e2hi))));
 		Temp rlo;
 		Temp rhi;
 		Temp ret;
@@ -251,9 +254,10 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 			// adc rhi e1hi e2hi
 			rlo = new Temp();
 			rhi = new Temp();
-			Stm add = new SEQ(setup, new SEQ(new MOVE(new TEMP(rlo), new BINOP(Operator.ADDS,
-					new TEMP(e1loT), new TEMP(e2loT))), new MOVE(new TEMP(rhi), new BINOP(
-					Operator.ADC, new TEMP(e1hiT), new TEMP(e2hiT)))));
+			Stm add = new SEQ(setup, new SEQ(new MOVE(new TEMP(rlo), new BINOP(
+					Operator.ADDS, new TEMP(e1loT), new TEMP(e2loT))),
+					new MOVE(new TEMP(rhi), new BINOP(Operator.ADC, new TEMP(
+							e1hiT), new TEMP(e2hiT)))));
 			return new Ex(new ESEQ(add, new TEMP(rlo)), new TEMP(rhi));
 		case Minus:
 			if (!n.IsDoubleWord())
@@ -262,9 +266,10 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 			// sbc rhi e1hi e2hi
 			rlo = new Temp();
 			rhi = new Temp();
-			Stm sub = new SEQ(setup, new SEQ(new MOVE(new TEMP(rlo), new BINOP(Operator.SUBS,
-					new TEMP(e1loT), new TEMP(e2loT))), new MOVE(new TEMP(rhi), new BINOP(
-					Operator.SBC, new TEMP(e1hiT), new TEMP(e2hiT)))));
+			Stm sub = new SEQ(setup, new SEQ(new MOVE(new TEMP(rlo), new BINOP(
+					Operator.SUBS, new TEMP(e1loT), new TEMP(e2loT))),
+					new MOVE(new TEMP(rhi), new BINOP(Operator.SBC, new TEMP(
+							e1hiT), new TEMP(e2hiT)))));
 			return new Ex(new ESEQ(sub, new TEMP(rlo)), new TEMP(rhi));
 		case Times:
 			// umull rlo rhi e1lo e2lo
@@ -280,8 +285,9 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 			Exp hi = new BINOP(Operator.Plus, t, new TEMP(rhi));
 			t = new BINOP(Operator.Times, new TEMP(e1loT), new TEMP(e2hiT));
 			hi = new BINOP(Operator.Plus, t, hi);
-			Stm mul = new SEQ(setup, new SEQ(new UMULL(new TEMP(rlo), new TEMP(rhi), new TEMP(e1loT),
-					new TEMP(e2loT)), new MOVE(new TEMP(rhi), hi)));
+			Stm mul = new SEQ(setup, new SEQ(new UMULL(new TEMP(rlo), new TEMP(
+					rhi), new TEMP(e1loT), new TEMP(e2loT)), new MOVE(new TEMP(
+					rhi), hi)));
 			return new Ex(new ESEQ(mul, new TEMP(rlo)), new TEMP(rhi));
 		case Eq:
 		case Greater:
@@ -384,9 +390,9 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		Temp t = new Temp();
 		Temp ret = new Temp();
 		// Obviously fails if array size is over half max int
-		if (n.IsDoubleWord())
-			num = new BINOP(Operator.Times, num, new CONST(2));
 		num = new ESEQ(new MOVE(new TEMP(t), num), new TEMP(t));
+		if (n.IsDoubleInnerWord())
+			num = new BINOP(Operator.Times, num, new CONST(2));
 		explist = new ExpList(new BINOP(Operator.Plus, num, new CONST(1)),
 				explist);
 		explist = new ExpList(new CONST(4), explist);
@@ -468,24 +474,29 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		o = new BINOP(Operator.Times, o, elementsize);
 		o = new BINOP(Operator.Plus, o, new CONST(4));
 		Exp addr = new BINOP(Operator.Plus, arr, o);
-		MEM access = new MEM(addr);
+		Temp addrT = new Temp();
+		Stm access = new MOVE(new TEMP(addrT), addr);
 
 		if (n.StaticCheck)
 			if (!n.decl.type.IsDoubleWordInnerType())
-				return new Nx(new MOVE(access, rhs.unEx()));
+				return new Nx(new MOVE(new MEM(addr), rhs.unEx()));
 			else
-				return new Nx(new SEQ(new MOVE(access, rhslo), new MOVE(
-						new MEM(new BINOP(Operator.Plus, addr, new CONST(4))),
-						rhshi)));
+				return new Nx(
+						new SEQ(access, new SEQ(new MOVE(new MEM(
+								new TEMP(addrT)), rhslo), new MOVE(new MEM(
+								new BINOP(Operator.Plus, new TEMP(addrT),
+										new CONST(4))), rhshi))));
 
 		// Array Bound Check
 		Stm test = currentFrame.ArrayBoundCheck(arr, new ESEQ(new MOVE(
 				new TEMP(idxTmp), idx.unEx()), new TEMP(idxTmp)));
 
 		if (!n.decl.type.IsDoubleWordInnerType())
-			return new Nx(new SEQ(test, new MOVE(access, rhs.unEx())));
-		return new Nx(new SEQ(test, new SEQ(new MOVE(access, rhslo), new MOVE(
-				new MEM(new BINOP(Operator.Plus, addr, new CONST(4))), rhshi))));
+			return new Nx(new SEQ(test, new MOVE(new MEM(addr), rhs.unEx())));
+		return new Nx(new SEQ(test, new SEQ(access,
+				new SEQ(new MOVE(new MEM(new TEMP(addrT)), rhslo), new MOVE(
+						new MEM(new BINOP(Operator.Plus, new MEM(
+								new TEMP(addrT)), new CONST(4))), rhshi)))));
 	}
 
 	@Override

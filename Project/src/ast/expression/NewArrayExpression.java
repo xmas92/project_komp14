@@ -39,4 +39,8 @@ public class NewArrayExpression extends Expression {
 	public boolean IsDoubleWord() {
 		return false;
 	} 
+	
+	public boolean IsDoubleInnerWord() {
+		return primitive == Primitive.LongArr;
+	}
 }
