@@ -350,7 +350,10 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		Exp virtPtr = null;
 		ExpList explist = null;
 		Temp tmp = new Temp();
-		if (n.expr instanceof NewClassExpression
+		Boolean b = true;
+		for (Parameter p : n.decl.parameters)
+			b &= Type.IsPrimative(p.type);
+		if (b && n.expr instanceof NewClassExpression
 				&& Type.IsPrimative(n.decl.type)) {
 			ptr = new ESEQ(new MOVE(new TEMP(tmp), ptr), new TEMP(tmp));
 			Stm free = new EXPS(currentFrame.ExternalCall("free", new ExpList(new TEMP(tmp), null)));
