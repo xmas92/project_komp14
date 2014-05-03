@@ -571,9 +571,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		if (!n.type.IsDoubleWord())
 			t = t.tail = new ExpList(val.unEx(), null);
 		else {
-			// TODO REMOVE THIS!!! !!!!
-			if (currentClass.id.equals("MainChild") && currentMethod.id.equals("dostuff"))
-				t = t.tail = new ExpList(new CONST(-1), null); // padding
+			// t = t.tail = new ExpList(new CONST(-1), null); // padding
 			t = t.tail = new ExpList(val.unExLo(), null);
 			t = t.tail = new ExpList(val.unExHi(), null);
 		}
