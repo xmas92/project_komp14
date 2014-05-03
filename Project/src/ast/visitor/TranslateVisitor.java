@@ -356,7 +356,8 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		if (b && n.expr instanceof NewClassExpression
 				&& Type.IsPrimative(n.decl.type)) {
 			ptr = new ESEQ(new MOVE(new TEMP(tmp), ptr), new TEMP(tmp));
-			Stm free = new EXPS(currentFrame.ExternalCall("free", new ExpList(new TEMP(tmp), null)));
+			Stm free = new EXPS(currentFrame.ExternalCall("free", new ExpList(
+					new TEMP(tmp), null)));
 			if (!n.decl.virtual)
 				explist = new ExpList(ptr, null);
 			else
@@ -386,7 +387,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 							currentFrame.RV(1))), free)), new TEMP(tmp)),
 					new TEMP(tmphi));
 		}
-			
+
 		if (n.decl.virtual) { // ptr is used twice, so store it in a temp
 			virtPtr = new ESEQ(new MOVE(new TEMP(tmp), ptr), new TEMP(tmp));
 			ptr = new TEMP(tmp); // Swap place as virtPtr is evaluated first and
@@ -409,7 +410,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		else
 			call = new CALL(new NAME(n.decl.frame.frameLabel), explist);
 		if (!n.IsDoubleWord())
-				return new Ex(call);
+			return new Ex(call);
 		tmp = new Temp();
 		Temp tmphi = new Temp();
 		return new Ex(
@@ -570,7 +571,9 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		if (!n.type.IsDoubleWord())
 			t = t.tail = new ExpList(val.unEx(), null);
 		else {
-			// t = t.tail = new ExpList(new CONST(0), null); // padding
+			// TODO REMOVE THIS!!! !!!!
+			if (currentClass.id.equals("MainChild") && currentMethod.id.equals("dostuff"))
+				t = t.tail = new ExpList(new CONST(-1), null); // padding
 			t = t.tail = new ExpList(val.unExLo(), null);
 			t = t.tail = new ExpList(val.unExHi(), null);
 		}
