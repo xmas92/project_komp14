@@ -437,25 +437,24 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		if (n.decl.isField)
 			fp = currentFrame.thisPtr.unEx(fp);
 		Tr rhs = n.expr.accept(this, arg);
-		Exp rhslo = null;
-		Exp rhshi = null;
+		Temp rhslo = new Temp();
+		Temp rhshi = new Temp();
+		Stm setup = null;
 		if (n.decl.type.IsDoubleWord() || n.decl.type.IsDoubleWordInnerType()) {
-			rhslo = rhs.unExLo();
-			if (!n.expr.IsDoubleWord()) { // Sign Extend if we have too
-				// Should only eval ret value once but we use it multiple times
-				// move to new temp
-				// rhslo = new TEMP(tmp); after first use
-				Temp tmp = new Temp();
-				rhslo = new ESEQ(new MOVE(new TEMP(tmp), rhslo), new TEMP(tmp));
-				rhshi = new BINOP(Operator.ASR, new TEMP(tmp), new CONST(31));
+			setup = new MOVE(new TEMP(rhslo), rhs.unExLo());
+			if (!n.expr.IsDoubleWord()) { // Sign Extend 
+				setup = new SEQ(setup, 
+						new MOVE(new TEMP(rhshi), 
+								 new BINOP(Operator.ASR, new TEMP(rhslo), new CONST(31))));
 			} else
-				rhshi = rhs.unExHi();
+				setup = new SEQ(setup, 
+						new MOVE(new TEMP(rhshi), rhs.unExHi()));
 		}
 		if (n.index == null) {
 			if (n.decl.type.IsDoubleWord())
-				return new Nx(new SEQ(
-						new MOVE(n.decl.access.unExLo(fp), rhslo), new MOVE(
-								n.decl.access.unExHi(fp), rhshi)));
+				return new Nx(new SEQ(setup,
+							  new SEQ(new MOVE(n.decl.access.unExLo(fp), new TEMP(rhslo)), 
+									  new MOVE(n.decl.access.unExHi(fp), new TEMP(rhshi)))));
 			else
 				return new Nx(new MOVE(n.decl.access.unEx(fp), rhs.unEx()));
 		}
@@ -481,11 +480,11 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 			if (!n.decl.type.IsDoubleWordInnerType())
 				return new Nx(new MOVE(new MEM(addr), rhs.unEx()));
 			else
-				return new Nx(
-						new SEQ(access, new SEQ(new MOVE(new MEM(
-								new TEMP(addrT)), rhslo), new MOVE(new MEM(
-								new BINOP(Operator.Plus, new TEMP(addrT),
-										new CONST(4))), rhshi))));
+				return new Nx(new SEQ(access, 
+							  new SEQ(setup, 
+						      new SEQ(new MOVE(new MEM(new TEMP(addrT)), new TEMP(rhslo)), 
+						    		  new MOVE(new MEM(new BINOP(Operator.Plus, new TEMP(addrT),new CONST(4))), 
+						    				   new TEMP(rhshi))))));
 
 		// Array Bound Check
 		Stm test = currentFrame.ArrayBoundCheck(arr, new ESEQ(new MOVE(
@@ -493,10 +492,12 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 
 		if (!n.decl.type.IsDoubleWordInnerType())
 			return new Nx(new SEQ(test, new MOVE(new MEM(addr), rhs.unEx())));
-		return new Nx(new SEQ(test, new SEQ(access,
-				new SEQ(new MOVE(new MEM(new TEMP(addrT)), rhslo), new MOVE(
-						new MEM(new BINOP(Operator.Plus, new MEM(
-								new TEMP(addrT)), new CONST(4))), rhshi)))));
+		return new Nx(new SEQ(test, 
+				  	  new SEQ(access,
+					  new SEQ(setup,
+					  new SEQ(new MOVE(new MEM(new TEMP(addrT)), new TEMP(rhslo)), 
+							  new MOVE(new MEM(new BINOP(Operator.Plus, new TEMP(addrT), new CONST(4))), 
+									   new TEMP(rhshi)))))));
 	}
 
 	@Override
