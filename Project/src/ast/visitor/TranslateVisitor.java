@@ -350,6 +350,13 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		Exp virtPtr = null;
 		ExpList explist = null;
 		Temp tmp = new Temp();
+		if (n.expr instanceof NewClassExpression
+				&& Type.IsPrimative(n.decl.type)) {
+			ptr = new ESEQ(new MOVE(new TEMP(tmp), ptr), new TEMP(tmp));
+			Stm free = new EXPS(currentFrame.ExternalCall("free", new ExpList(new TEMP(tmp), null)));
+			if (!n.decl.virtual)
+				explist = new ExpList(ptr, null);
+			else
 		if (n.decl.virtual) { // ptr is used twice, so store it in a temp
 			virtPtr = new ESEQ(new MOVE(new TEMP(tmp), ptr), new TEMP(tmp));
 			ptr = new TEMP(tmp); // Swap place as virtPtr is evaluated first and
@@ -406,9 +413,10 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		ExpList explist = null;
 		// Size of the object in bytes
 		if (Record.records.get(n.id).Size() == 0)
-			return new Ex(new CONST(0));
-		explist = new ExpList(new CONST(Record.records.get(n.id).Size()),
-				explist);
+			explist = new ExpList(new CONST(1), explist);
+		else
+			explist = new ExpList(new CONST(Record.records.get(n.id).Size()),
+					explist);
 		explist = new ExpList(new CONST(1), explist);
 		Temp t = new Temp();
 		if (Record.records.get(n.id).VtableSize() == 0)
