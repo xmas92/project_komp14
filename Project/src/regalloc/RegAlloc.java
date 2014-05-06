@@ -531,8 +531,9 @@ public class RegAlloc implements TempMap {
 
 	@Override
 	public String constMap(int n) {
-		return Integer.toString(spillSize
-				+ Integer.parseInt(tempMap.constMap(n)));
+		int i = spillSize + Integer.parseInt(tempMap.constMap(n));
+		i += (i%8==0?4:0);
+		return Integer.toString(i);
 	}
 
 }
