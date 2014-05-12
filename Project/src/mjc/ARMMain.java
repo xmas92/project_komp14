@@ -25,6 +25,7 @@ public final class ARMMain {
 	public static String pathname = "test.minijava";
 	public static void main(String[] args) {
 		File f = new File(args[0]);
+		String fn = f.getName();
 		Program p = null;
 		try {
 			// Lex and Parser Pass
@@ -58,6 +59,7 @@ public final class ARMMain {
 			// Register allocation Pass
 			proc.frame.AddPrologueEpilogue(proc);
 			proc.regalloc = new RegAlloc(proc);
+			proc.frame.RewritePrologueEpilogue(proc);
 			proc.frame.AddDataAccess(proc);
 			str += "@ Method: " + proc.frame.frameLabel.label + "\n";
 			str += proc.toString();
@@ -66,14 +68,14 @@ public final class ARMMain {
 			abc |= ((Frame)proc.frame).abc;
 		}
 		if (abc) {
-			str += "_abc:\n";
+		/*	str += "_abc:\n";
 			str += "\tldr r2, [ r0 ]\n";
 			str += "\tmov r0, #1\n";
 			str += "\tcmp r1, #0\n";
 			str += "\tbllt exit\n";
 			str += "\tcmp r1, r2\n";
 			str += "\tblge exit\n";
-			str += "\tbx lr\n";
+			str += "\tbx lr\n";*/
 		}
 
 		str += "@ data\n";
@@ -82,7 +84,7 @@ public final class ARMMain {
 		for (Instr i : CodeGeneration.GeneratePrintLnInstr()) 
 			str += i.format(new DefaultMap());
 		try {
-			File j = new File("armasm.s");
+			File j = new File(fn.substring(0,fn.length()-5)+".s");
 			j.createNewFile();
 			PrintStream out = new PrintStream(j);
 			out.print(str);

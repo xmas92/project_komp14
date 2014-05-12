@@ -26,6 +26,7 @@ public class Hardware {
 
 	public static Temp[] retRegs = { r0, r1 };
 	public static Temp[] argRegs = { r0, r1, r2, r3 };
+	public static Temp[] popRegs = { r4, r5, r6, r8, r9, r10, r11 };
 	public static Temp[] varRegs = { r4, r5, r6, r7, r8, r9, r10, r11, r14 };
 	public static Temp[] calleeSaved = {  r4, r5, r6, r7, r8, r9, r10, r11, r14 };
 	public static Temp[] callerSaved = { r0, r1, r2, r3, r12, r14 };

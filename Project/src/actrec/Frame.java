@@ -13,6 +13,7 @@ import ir.tree.Stm;
 public abstract class Frame {
 	public Label frameLabel;
 	public Access thisPtr;
+	public boolean leafFrame = true;
 	public Frame(Label label) {
 		frameLabel = label;
 	}
@@ -35,5 +36,7 @@ public abstract class Frame {
 	public abstract int SpillOffset();
 	public abstract void AddReturnSink(Procedure proc);
 	public abstract Stm ArrayBoundCheck(Exp arr, Exp idx);
-	public abstract NAME GetDataLabel(Label getVTable) ;
+	public abstract NAME GetDataLabel(Label getVTable);
+	public abstract void RewritePrologueEpilogue(Procedure proc);
+	public abstract Temp[] PreferredRegisters();
 }

@@ -52,7 +52,7 @@
 	
     <target name="run-jvm" depends="clean,jar">
         <java classpath="${ant.project.name}.jar" classname="${main-class-jvm}">
-			<arg line="${src.dir}/test.minijava"/>
+			<arg line="${src.dir}/test.java"/>
 			<arg line="-S"/>
 		</java>
     </target>
@@ -60,7 +60,7 @@
 	
     <target name="run-arm" depends="clean,jar">
         <java classpath="${ant.project.name}.jar" classname="${main-class-arm}">
-			<arg line="${src.dir}/test.minijava"/>
+			<arg line="${src.dir}/test.java"/>
 			<arg line="-S"/>
 		</java>
     </target>

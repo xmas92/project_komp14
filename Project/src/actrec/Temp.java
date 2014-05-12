@@ -1,6 +1,6 @@
 package actrec;
 
-public class Temp {
+public class Temp implements Comparable<Temp> {
 	private static int idx = 0;
 	public final int temp;
 	public Temp() {
@@ -16,5 +16,9 @@ public class Temp {
 		if (o instanceof Temp)
 			return ((Temp)o).temp == temp;
 		return false;
+	}
+	@Override
+	public int compareTo(Temp o) {
+		return Integer.compare(temp, o.temp);
 	}
 }

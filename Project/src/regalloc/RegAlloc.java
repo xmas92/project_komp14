@@ -2,11 +2,13 @@ package regalloc;
 
 import ir.translate.Procedure;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.TreeMap;
+import java.util.Set;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Stack;
+import java.util.TreeSet;
 
 import dataflow.InstrFlowGraph;
 import dataflow.Node;
@@ -19,7 +21,7 @@ import assem.OPER;
 
 public class RegAlloc implements TempMap {
 
-	static public class Edge {
+	static public class Edge implements Comparable<Edge> {
 		Node n1, n2;
 
 		public Edge(Node n1, Node n2) {
@@ -46,6 +48,14 @@ public class RegAlloc implements TempMap {
 			seed ^= n2.hashCode() + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 			return seed;
 		}
+
+		@Override
+		public int compareTo(Edge o) {
+			int ret = n1.compareTo(o.n1);
+			if (ret == 0)
+				return n2.compareTo(o.n2);
+			return ret;
+		}
 	}
 
 	public RegAlloc(Procedure proc) {
@@ -58,45 +68,57 @@ public class RegAlloc implements TempMap {
 		}
 		Main();
 		LinkedList<Instr> nInstr = new LinkedList<>();
+		int idx = 0;
 		outer: for (Instr i : proc.instrs) {
+			idx++;
 			if (i instanceof MOVE) {
 				MOVE m = (MOVE) i;
 				if (tempMap(m.dst).equals(tempMap(m.src)))
 					continue outer;
+			} else if (i.assem.startsWith("ldr")) {
+				Temp def = getTemp(i.defines().head);
+				for (Iterator<Instr> li = proc.instrs.listIterator(idx); li.hasNext();) {
+					Instr i2 = li.next();
+					if (/*i2 instanceof LABEL ||*/ i2.jumps() != null || 
+							(i2.uses() != null && i2.uses().contains(def, color)))
+						break;
+					if (i2.defines() != null && i2.defines().contains(def, color))
+						continue outer;
+				}
 			}
 			nInstr.add(i);
 		}
 		proc.instrs = nInstr;
 	}
 
-	private HashSet<Temp> registers;
+	private Set<Temp> registers;
 	private TempMap tempMap;
 	private int K;
 	private int spillSize;
 
-	private HashSet<Node> simplifyWorklist = new HashSet<>();
-	private HashSet<Node> freezeWorklist = new HashSet<>();
-	private HashSet<Node> spillWorklist = new HashSet<>();
+	private Set<Node> simplifyWorklist = new TreeSet<>();
+	private Set<Node> freezeWorklist = new TreeSet<>();
+	private Set<Node> spillWorklist = new TreeSet<>();
 
-	private HashSet<Edge> coalescedMoves = new HashSet<>();
-	private HashSet<Edge> constrainedMoves = new HashSet<>();
-	private HashSet<Edge> frozenMoves = new HashSet<>();
-	private HashSet<Edge> worklistMoves = new HashSet<>();
-	private HashSet<Edge> activeMoves = new HashSet<>();
+	private Set<Edge> coalescedMoves = new TreeSet<>();
+	private Set<Edge> constrainedMoves = new TreeSet<>();
+	private Set<Edge> frozenMoves = new TreeSet<>();
+	private Set<Edge> worklistMoves = new TreeSet<>();
+	private Set<Edge> activeMoves = new TreeSet<>();
 
-	private HashSet<Node> spillNodes = new HashSet<>();
-	private HashSet<Node> coalescedNodes = new HashSet<>();
-	private HashSet<Node> coloredNodes = new HashSet<>();
+	private Set<Node> spillNodes = new TreeSet<>();
+	private Set<Node> coalescedNodes = new TreeSet<>();
+	private Set<Node> coloredNodes = new TreeSet<>();
 
-	private HashSet<Node> precolored = new HashSet<>();
-	private HashSet<Node> initial = new HashSet<>();
+	private Set<Node> precolored = new TreeSet<>();
+	private Set<Node> initial = new TreeSet<>();
 	private Stack<Node> selectStack = new Stack<>();
-	private HashSet<Edge> adjSet = new HashSet<>();
-	private HashMap<Node, HashSet<Node>> adjList = new HashMap<>();
-	private HashMap<Node, Integer> degree = new HashMap<>();
-	private HashMap<Node, HashSet<Edge>> moveList = new HashMap<>();
-	private HashMap<Node, Node> alias = new HashMap<>();
-	private HashMap<Temp, Temp> color = new HashMap<>();
+	private Set<Edge> adjSet = new TreeSet<>();
+	private Map<Node, Set<Node>> adjList = new TreeMap<>();
+	private Map<Node, Integer> degree = new TreeMap<>();
+	private Map<Node, Set<Edge>> moveList = new TreeMap<>();
+	private Map<Node, Node> alias = new TreeMap<>();
+	private Map<Temp, Temp> color = new TreeMap<>();
 	private Liveness liveness;
 	private Procedure proc;
 	private boolean selectSpillFirstTime;
@@ -133,7 +155,7 @@ public class RegAlloc implements TempMap {
 	}
 
 	private void RewriteProgram() {
-		HashSet<Node> newTemps = new HashSet<>();
+		Set<Node> newTemps = new TreeSet<>();
 		for (Node n : coalescedNodesBeforeSpill) {
 			for (Instr i : proc.instrs) {
 				i.CoalesceTemp(liveness.gtemp(n), liveness.gtemp(GetAlias(n)));
@@ -160,8 +182,7 @@ public class RegAlloc implements TempMap {
 					Temp vi = new Temp();
 					newTemps.add(liveness.tnode(vi));
 					String str = String.format(
-							"ldr `d0, [ `s0, #-%d ]\t@ Reload",
-							proc.frame.SpillOffset() + spillSize);
+							"ldr `d0, [ `s0, #-`k%d ]\t@ Reload", spillSize);
 					Instr ni = new OPER(str, L(vi), L(proc.frame.FP()));
 					ifg.addBefore(ni,i);
 					nInstrs.add(ni);
@@ -173,8 +194,7 @@ public class RegAlloc implements TempMap {
 					Temp vi = new Temp();
 					newTemps.add(liveness.tnode(vi));
 					String str = String.format(
-							"str `s0, [ `s1, #-%d ]\t@ Spill",
-							proc.frame.SpillOffset() + spillSize);
+							"str `s0, [ `s1, #-`k%d ]\t@ Spill", spillSize);
 					Instr ni = new OPER(str, null, L(vi, proc.frame.FP()));
 					ifg.addAfter(ni,i);
 					nInstrs.add(ni);
@@ -196,7 +216,7 @@ public class RegAlloc implements TempMap {
 	private void AssignColors() {
 		while (!selectStack.empty()) {
 			Node n = selectStack.pop();
-			HashSet<Temp> okColors = new HashSet<>(registers);
+			Set<Temp> okColors = new TreeSet<>(registers);
 			for (Node w : adjList.get(n))
 				if (precolored.contains(GetAlias(w))
 						|| coloredNodes.contains(GetAlias(w)))
@@ -205,18 +225,25 @@ public class RegAlloc implements TempMap {
 				spillNodes.add(n);
 			else {
 				coloredNodes.add(n);
-				color.put(liveness.gtemp(n), okColors.iterator().next());
+				color.put(liveness.gtemp(n), GetColor(okColors));
 			}
 		}
 		for (Node n : coalescedNodes)
 			color.put(liveness.gtemp(n), color.get(liveness.gtemp(GetAlias(n))));
 	}
 
-	private HashSet<Node> coalescedNodesBeforeSpill = new HashSet<>();
+	private Temp GetColor(Set<Temp> okColors) {
+		for (Temp t : proc.frame.PreferredRegisters())
+			if (okColors.contains(t))
+				return t;
+		return okColors.iterator().next();
+	}
+
+	private Set<Node> coalescedNodesBeforeSpill = new TreeSet<>();
 
 	private void SelectSpill() {
 		if (selectSpillFirstTime)
-			coalescedNodesBeforeSpill = new HashSet<>(coalescedNodes);
+			coalescedNodesBeforeSpill = new TreeSet<>(coalescedNodes);
 		selectSpillFirstTime = false;
 		Node m = null;
 		int p = -1;
@@ -293,8 +320,8 @@ public class RegAlloc implements TempMap {
 			spillWorklist.remove(v);
 		coalescedNodes.add(v);
 		alias.put(v, u);
-		HashSet<Edge> mlu = moveList.get(u);
-		HashSet<Edge> mlv = moveList.get(v);
+		Set<Edge> mlu = moveList.get(u);
+		Set<Edge> mlv = moveList.get(v);
 		if (mlu != null && mlv != null) {
 			mlu.addAll(mlv);
 		} else if (mlv != null) {
@@ -311,7 +338,7 @@ public class RegAlloc implements TempMap {
 		}
 	}
 
-	private boolean Conservative(HashSet<Node> nodes) {
+	private boolean Conservative(Set<Node> nodes) {
 		int k = 0;
 		for (Node n : nodes)
 			if (Degree(n) >= K)
@@ -332,13 +359,13 @@ public class RegAlloc implements TempMap {
 		return n;
 	}
 
-	private HashSet<Node> Union(HashSet<Node> s1, HashSet<Node> s2) {
-		HashSet<Node> ret = new HashSet<>(s1);
+	private Set<Node> Union(Set<Node> s1, Set<Node> s2) {
+		Set<Node> ret = new TreeSet<>(s1);
 		ret.addAll(s2);
 		return ret;
 	}
 
-	private boolean AllOK(HashSet<Node> adjacent, Node u) {
+	private boolean AllOK(Set<Node> adjacent, Node u) {
 		for (Node t : adjacent)
 			if (!OK(t, u))
 				return false;
@@ -369,7 +396,7 @@ public class RegAlloc implements TempMap {
 		int d = Degree(m);
 		degree.put(m, d - 1);
 		if (d == K) {
-			HashSet<Node> nodes = Adjacent(m);
+			Set<Node> nodes = Adjacent(m);
 			nodes.add(m);
 			EnableMoves(nodes);
 			spillWorklist.remove(m);
@@ -382,12 +409,12 @@ public class RegAlloc implements TempMap {
 	}
 
 	private void EnableMoves(Node v) {
-		HashSet<Node> t = new HashSet<>();
+		Set<Node> t = new TreeSet<>();
 		t.add(v);
 		EnableMoves(t);
 	}
 
-	private void EnableMoves(HashSet<Node> nodes) {
+	private void EnableMoves(Set<Node> nodes) {
 		for (Node n : nodes)
 			for (Edge m : NodeMoves(n))
 				if (activeMoves.contains(m)) {
@@ -396,12 +423,12 @@ public class RegAlloc implements TempMap {
 				}
 	}
 
-	private HashSet<Node> Adjacent(Node n) {
-		HashSet<Node> ret = adjList.get(n);
+	private Set<Node> Adjacent(Node n) {
+		Set<Node> ret = adjList.get(n);
 		if (ret == null)
-			return new HashSet<>();
+			return new TreeSet<>();
 		else
-			ret = new HashSet<>(ret);
+			ret = new TreeSet<>(ret);
 		ret.removeAll(selectStack);
 		ret.removeAll(coalescedNodes);
 		return ret;
@@ -423,13 +450,13 @@ public class RegAlloc implements TempMap {
 		return !NodeMoves(n).isEmpty();
 	}
 
-	private HashSet<Edge> NodeMoves(Node n) {
-		HashSet<Edge> ret = moveList.get(n);
+	private Set<Edge> NodeMoves(Node n) {
+		Set<Edge> ret = moveList.get(n);
 		if (ret == null)
-			return new HashSet<>();
+			return new TreeSet<>();
 		else
-			ret = new HashSet<>(ret);
-		HashSet<Edge> rem = new HashSet<>(worklistMoves);
+			ret = new TreeSet<>(ret);
+		Set<Edge> rem = new TreeSet<>(worklistMoves);
 		rem.addAll(activeMoves);
 		ret.retainAll(rem);
 		return ret;
@@ -452,7 +479,7 @@ public class RegAlloc implements TempMap {
 		for (Temp t : registers)
 			precolored.add(liveness.tnode(t));
 		// Build
-//		HashSet<Temp> live = liveness.out.get(ifg.node(proc.instrs.getLast()));
+//		Set<Temp> live = liveness.out.get(ifg.node(proc.instrs.getLast()));
 		// check if it is uses/defs or in/out :)
 		for (Iterator<Instr> it = proc.instrs.descendingIterator(); it
 				.hasNext();) {
@@ -460,11 +487,11 @@ public class RegAlloc implements TempMap {
 			if (I instanceof MOVE) {
 				MOVE M = (MOVE) I;
 //				live.removeAll(Uses(I));
-//				HashSet<Temp> union = new HashSet<>(Defines(I));
+//				Set<Temp> union = new Set<>(Defines(I));
 //				union.addAll(Uses(I));
 				for (Temp n : liveness.out.get(ifg.node(I))) {
 					if (!moveList.containsKey(liveness.tnode(n)))
-						moveList.put(liveness.tnode(n), new HashSet<Edge>());
+						moveList.put(liveness.tnode(n), new TreeSet<Edge>());
 					moveList.get(liveness.tnode(n)).add(
 							new Edge(liveness.tnode(M.dst), liveness
 									.tnode(M.src)));
@@ -495,14 +522,14 @@ public class RegAlloc implements TempMap {
 			adjSet.add(er);
 			if (!precolored.contains(u)) {
 				if (!adjList.containsKey(u))
-					adjList.put(u, new HashSet<Node>());
+					adjList.put(u, new TreeSet<Node>());
 				adjList.get(u).add(v);
 				Integer d = degree.get(u);
 				degree.put(u, (d == null) ? 0 : d + 1);
 			}
 			if (!precolored.contains(v)) {
 				if (!adjList.containsKey(v))
-					adjList.put(v, new HashSet<Node>());
+					adjList.put(v, new TreeSet<Node>());
 				adjList.get(v).add(u);
 				Integer d = degree.get(v);
 				degree.put(v, (d == null) ? 0 : d + 1);
@@ -528,12 +555,19 @@ public class RegAlloc implements TempMap {
 	public String tempMap(Temp t) {
 		return tempMap.tempMap(color.get(t));
 	}
+	
+	public Temp getTemp(Temp t) {
+		return color.get(t);
+	}
 
 	@Override
 	public String constMap(int n) {
-		int i = spillSize + Integer.parseInt(tempMap.constMap(n));
-		i += (i%8==0?4:0);
-		return Integer.toString(i);
+		int i = proc.frame.SpillOffset();
+		return Integer.toString(i+n);
+	}
+
+	public int SpillSize() {
+		return spillSize;
 	}
 
 }

@@ -174,6 +174,8 @@ public class Optimize {
 				case Times:
 					if (((CONST) e1).value == 0)
 						return new CONST(0);
+					if (((CONST) e1).value == 1)
+						return e2;
 					break;
 				default:
 					break;
@@ -192,6 +194,9 @@ public class Optimize {
 				case Times:
 					if (((CONST) e2).value == 0)
 						return new CONST(0);
+					if (((CONST) e2).value == 1)
+						return e1;
+					break;
 				case ASR:
 					if (((CONST) e2).value == 0)
 						return e1;

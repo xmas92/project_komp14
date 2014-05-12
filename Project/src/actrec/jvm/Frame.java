@@ -204,4 +204,16 @@ public class Frame extends actrec.Frame {
 		throw new Error();
 	}
 
+	@Override
+	public void RewritePrologueEpilogue(Procedure proc) {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Temp[] PreferredRegisters() {
+		// Should never happen
+		throw new Error();
+	}
+
 }

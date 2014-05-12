@@ -43,6 +43,7 @@ import ir.translate.Nx;
 import ir.translate.Procedure;
 import ir.translate.RelCx;
 import ir.translate.Tr;
+import ir.tree.ALIGN;
 import ir.tree.BINOP;
 import ir.tree.CALL;
 import ir.tree.CJUMP;
@@ -345,6 +346,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 
 	@Override
 	public Tr visit(MemberCallExpression n, Object arg) {
+		currentFrame.leafFrame = false;
 		Tr e = n.expr.accept(this, arg);
 		Exp ptr = e.unEx();
 		Exp virtPtr = null;
@@ -363,12 +365,18 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 			else
 				explist = new ExpList(new TEMP(tmp), null);
 			ExpList t = explist;
+			boolean dwordalign = false;
 			for (Expression ex : n.exprlist) {
 				if (ex.IsDoubleWord()) {
 					Tr exp = ex.accept(this, arg);
+					if (!dwordalign) {
+						t = t.tail = new ExpList(new ALIGN(), null);
+						dwordalign = true;
+					}
 					t = t.tail = new ExpList(exp.unExLo(), null);
 					t = t.tail = new ExpList(exp.unExHi(), null);
 				} else {
+					dwordalign = !dwordalign;
 					t = t.tail = new ExpList(ex.accept(this, arg).unEx(), null);
 				}
 			}
@@ -395,12 +403,18 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		}
 		explist = new ExpList(ptr, null);
 		ExpList t = explist;
+		boolean dwordalign = false;
 		for (Expression ex : n.exprlist) {
 			if (ex.IsDoubleWord()) {
 				Tr exp = ex.accept(this, arg);
+				if (!dwordalign) {
+					t = t.tail = new ExpList(new ALIGN(), null);
+					dwordalign = true;
+				}
 				t = t.tail = new ExpList(exp.unExLo(), null);
 				t = t.tail = new ExpList(exp.unExHi(), null);
 			} else {
+				dwordalign = !dwordalign;
 				t = t.tail = new ExpList(ex.accept(this, arg).unEx(), null);
 			}
 		}
@@ -422,6 +436,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 
 	@Override
 	public Tr visit(NewArrayExpression n, Object arg) {
+		currentFrame.leafFrame = false;
 		Tr size = n.size.accept(this, arg);
 		ExpList explist = null;
 		Exp num = size.unEx();
@@ -441,6 +456,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 
 	@Override
 	public Tr visit(NewClassExpression n, Object arg) {
+		currentFrame.leafFrame = false;
 		ExpList explist = null;
 		// Size of the object in bytes
 		if (Record.records.get(n.id).Size() == 0)
@@ -554,6 +570,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 
 	@Override
 	public Tr visit(PrintStatement n, Object arg) {
+		currentFrame.leafFrame = false;
 		Exp str;
 		Tr val = n.expr.accept(this, arg);
 		if (n.expr instanceof BooleanLiteralExpression) {
@@ -571,11 +588,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 		if (!n.type.IsDoubleWord())
 			t = t.tail = new ExpList(val.unEx(), null);
 		else {
-			t = t.tail = new ExpList(new CONST(0), null); // padding
-//			Temp lo = new Temp();
-//			ESEQ hi = new ESEQ(new MOVE(new TEMP(lo), val.unExLo()), val.unExHi());
-//			t = t.tail = new ExpList(hi, null);
-//			t = t.tail = new ExpList(new TEMP(lo), null);
+			t = t.tail = new ExpList(new ALIGN(), null); // padding
 			t = t.tail = new ExpList(val.unExLo(), null);
 			t = t.tail = new ExpList(val.unExHi(), null);
 		}

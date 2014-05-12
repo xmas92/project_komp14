@@ -2,6 +2,7 @@ package canon;
 
 import actrec.Temp;
 import ir.translate.Procedure;
+import ir.tree.ALIGN;
 import ir.tree.CALL;
 import ir.tree.CONST;
 import ir.tree.ESEQ;
@@ -35,7 +36,7 @@ public class Canonicalize {
 	}
 	
 	static boolean Commute(Stm s, Exp e) {
-		return IsNoOP(s) || e instanceof NAME || e instanceof CONST;
+		return IsNoOP(s) || e instanceof NAME || e instanceof CONST || e instanceof ALIGN;
 	}
 
 	static Stm DoStm(SEQ s) {

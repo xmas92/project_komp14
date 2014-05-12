@@ -2,7 +2,6 @@ package ast.declaration;
 
 import actrec.Access;
 import ast.Node;
-import ast.type.PrimitiveType.Primitive;
 import ast.type.Type;
 import ast.visitor.GenericVisitor;
 import ast.visitor.VoidVisitor;

@@ -3,7 +3,6 @@ package compiler;
 import ir.translate.Procedure;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 
 import canon.Canonicalize;
@@ -15,7 +14,6 @@ import actrec.arm.CodeGeneration;
 import actrec.arm.Frame;
 import assem.Instr;
 import ast.Program;
-import ast.visitor.FancyPrintVisitor;
 import ast.visitor.FrameBuilderVisitor;
 import ast.visitor.OptimizeExpressionPassOneVisitor;
 import ast.visitor.OptimizeExpressionPassTwoVisitor;
@@ -59,35 +57,37 @@ public final class EntryPoint2 {
 		for (Procedure proc : TranslateVisitor.procedures) {
 			// Canoicalize and Optimize IR tree Pass
 			Canonicalize.CanonicalizeProc(proc);
+//			 System.out.print(proc);
 			// Instruction Selection Pass (codegen)
 			(new CodeGeneration(proc.frame)).Codegen(proc);
 			// System.out.print(proc);
 			// Register allocation Pass
 			proc.frame.AddPrologueEpilogue(proc);
 			proc.regalloc = new RegAlloc(proc);
+			proc.frame.RewritePrologueEpilogue(proc);
 			proc.frame.AddDataAccess(proc);
 			System.out.print("@ Method: " + proc.frame.frameLabel.label + "\n");
 			System.out.print(proc);
 			System.out.print(".ltorg\t@ dump literal pool\n");
 			System.out.print("\n");
-//			try {
-//				InstrFlowGraph ifg = new InstrFlowGraph(proc);
-//				File DOTFILE = new File(proc.frame.frameLabel.label + "_graph.dot");
-//				DOTFILE.createNewFile();
-//				ifg.BuildDOTGraph(new PrintStream(DOTFILE), proc.regalloc);
-//			} catch (Exception e) {}
+			try {
+				InstrFlowGraph ifg = new InstrFlowGraph(proc);
+				File DOTFILE = new File(proc.frame.frameLabel.label + "_graph.dot");
+				DOTFILE.createNewFile();
+				ifg.BuildDOTGraph(new PrintStream(DOTFILE), proc.regalloc);
+			} catch (Exception e) {}
 			abc |= ((Frame)proc.frame).abc;
 		}
 
 		if (abc) {
-			System.out.print("_abc:\n");
-			System.out.print("\tldr r2, [ r0 ]\n");
-			System.out.print("\tmov r0, #1\n");
-			System.out.print("\tcmp r1, #0\n");
-			System.out.print("\tbllt exit\n");
-			System.out.print("\tcmp r1, r2\n");
-			System.out.print("\tblge exit\n");
-			System.out.print("\tbx lr\n");
+//			System.out.print("_abc:\n");
+//			System.out.print("\tldr r2, [ r0 ]\n");
+//			System.out.print("\tmov r0, #1\n");
+//			System.out.print("\tcmp r1, #0\n");
+//			System.out.print("\tbllt exit\n");
+//			System.out.print("\tcmp r1, r2\n");
+//			System.out.print("\tblge exit\n");
+//			System.out.print("\tbx lr\n");
 		}
 		
 		System.out.print("@ data\n");

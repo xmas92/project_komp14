@@ -39,8 +39,9 @@ public abstract class Instr {
 		int len = assem.length();
 
 		for (int i = 0; i < len; i++)
-			if (assem.charAt(i) == '`')
-				switch (assem.charAt(++i)) {
+			if (assem.charAt(i) == '`') {
+				i++;
+				switch (assem.charAt(i)) {
 				case 's': {
 					int n = Character.digit(assem.charAt(++i), 10);
 					s.append(m.tempMap(nthTemp(src, n)));
@@ -57,7 +58,9 @@ public abstract class Instr {
 				}
 					break;
 				case 'k': {
-					int n = Character.digit(assem.charAt(++i), 10);
+					int n = ++i;
+					while (i < assem.length() && Character.isDigit(assem.charAt(i))) i++;
+					n = Integer.parseInt(assem.substring(n, i--));
 					s.append(m.constMap(n));
 				}
 					break;
@@ -67,8 +70,9 @@ public abstract class Instr {
 				default:
 					throw new Error("bad Assem format");
 				}
-			else
+			} else {
 				s.append(assem.charAt(i));
+			}
 
 		if (this instanceof LABEL) {
 			return s.toString() + "\n";	

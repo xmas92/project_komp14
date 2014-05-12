@@ -2,6 +2,7 @@ package actrec;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class TempList implements Collection<Temp>{
@@ -212,5 +213,13 @@ public class TempList implements Collection<Temp>{
 		}
 		if (tail == null) return b || false;
 		return  b || tail.swap(gtemp, vi);
+	}
+	public boolean contains(Temp o, Map<Temp, Temp> tmpMap) {
+		if (o != null)
+			if (o.equals(tmpMap.get(head)))
+				return true;
+			else if (tail != null)
+				return tail.contains(o, tmpMap);
+		return false;
 	}
 }

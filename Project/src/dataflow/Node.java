@@ -2,7 +2,7 @@ package dataflow;
 
 import java.util.HashSet;
 
-public class Node {
+public class Node implements Comparable<Node>{
 	Graph parent;
 	public int idx;
 	HashSet<Node> succs;
@@ -73,5 +73,11 @@ public class Node {
 	@Override
 	public String toString() {
 		return Integer.toString(idx);
+	}
+	
+
+	@Override
+	public int compareTo(Node o) {
+		return Integer.compare(idx, o.idx);
 	}
 }
