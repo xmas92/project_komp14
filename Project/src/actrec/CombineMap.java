@@ -13,7 +13,7 @@ public class CombineMap implements TempMap {
 	}
 
 	@Override
-	public String constMap(int n) {
+	public String constMap(int n, char c) {
 		return "CompilerConst" + n;
 	}
 }

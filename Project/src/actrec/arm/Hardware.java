@@ -26,10 +26,10 @@ public class Hardware {
 
 	public static Temp[] retRegs = { r0, r1 };
 	public static Temp[] argRegs = { r0, r1, r2, r3 };
-	public static Temp[] popRegs = { r4, r5, r6, r8, r9, r10, r11 };
+	public static Temp[] popRegs = { r4, r5, r6, r7, r8, r9, r10, r11 };
 	public static Temp[] varRegs = { r4, r5, r6, r7, r8, r9, r10, r11, r14 };
 	public static Temp[] calleeSaved = {  r4, r5, r6, r7, r8, r9, r10, r11, r14 };
-	public static Temp[] callerSaved = { r0, r1, r2, r3, r12, r14 };
+	public static Temp[] callerSaved = { r0, r1, r2, r3, r12 };
 
 	//public static Temp RV = new Temp(); // Abstract register for return values (retRegs physical)
 	
@@ -53,9 +53,8 @@ public class Hardware {
 			}
 		}
 		calldefs = tl;
-		for (Temp t : calleeSaved) {
-			returnSink.add(t);
-		}
+		calldefs.add(LR);
+		
 		returnSink.add(r0);
 		returnSink.add(r1);
 		returnSink.add(SP);
@@ -96,13 +95,13 @@ public class Hardware {
 		// tempMap.put(r15, "pc");
 		// regiseters.add(r15);
 	}
-	public static TempList spfp = 	new TempList(r7,
-									new TempList(r14, null));
-	public static TempList calleeSavedList = 	new TempList(r4,
-												new TempList(r5,
-												new TempList(r6,
-												new TempList(r8,
-												new TempList(r9,
-												new TempList(r10,
-												new TempList(r11, null)))))));
+//	public static TempList spfp = 	new TempList(r7,
+//									new TempList(r14, null));
+//	public static TempList calleeSavedList = 	new TempList(r4,
+//												new TempList(r5,
+//												new TempList(r6,
+//												new TempList(r8,
+//												new TempList(r9,
+//												new TempList(r10,
+//												new TempList(r11, null)))))));
 }

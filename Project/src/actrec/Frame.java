@@ -3,6 +3,7 @@ package actrec;
 import java.util.Deque;
 import java.util.HashSet;
 
+import regalloc.RegAlloc;
 import assem.Instr;
 import ir.translate.Procedure;
 import ir.tree.Exp;
@@ -27,6 +28,7 @@ public abstract class Frame {
 	public abstract Stm GetPrintStrBool(Exp value);
 	public abstract Temp RV(int i);
 	public abstract Temp FP();
+	public abstract Temp SP();
 	public abstract Record CreateRecord(String id, String extendsID);
 	public abstract Access ArgAccess(int i);
 	public abstract Deque<Instr> AddPrologueEpilogue(Procedure li);
@@ -39,4 +41,6 @@ public abstract class Frame {
 	public abstract NAME GetDataLabel(Label getVTable);
 	public abstract void RewritePrologueEpilogue(Procedure proc);
 	public abstract Temp[] PreferredRegisters();
+	public abstract int ParamSize();
+	public abstract int FrameSize(RegAlloc regalloc);
 }

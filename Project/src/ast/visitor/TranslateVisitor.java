@@ -315,7 +315,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 
 	@Override
 	public Tr visit(IdentifierExpression n, Object arg) {
-		Exp fp = new TEMP(currentFrame.FP());
+		Exp fp = new TEMP(currentFrame.SP());
 		if (n.decl.isField) {
 			fp = currentFrame.thisPtr.unEx(fp);
 		}
@@ -477,7 +477,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 
 	@Override
 	public Tr visit(ThisExpression n, Object arg) {
-		return new Ex(currentFrame.thisPtr.unEx(new TEMP(currentFrame.FP())));
+		return new Ex(currentFrame.thisPtr.unEx(new TEMP(currentFrame.SP())));
 	}
 
 	@Override
@@ -488,7 +488,7 @@ public class TranslateVisitor implements GenericVisitor<Tr, Object> {
 
 	@Override
 	public Tr visit(AssignmentStatement n, Object arg) {
-		Exp fp = new TEMP(currentFrame.FP());
+		Exp fp = new TEMP(currentFrame.SP());
 		if (n.decl.isField)
 			fp = currentFrame.thisPtr.unEx(fp);
 		Tr rhs = n.expr.accept(this, arg);

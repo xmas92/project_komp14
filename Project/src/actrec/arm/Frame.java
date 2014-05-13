@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import regalloc.RegAlloc;
 import actrec.Access;
 import actrec.Label;
 import actrec.Temp;
@@ -72,19 +73,19 @@ public class Frame extends actrec.Frame implements TempMap {
 				a1 = new InReg(new Temp());
 				formalwords++;
 			} else
-				a1 = new InFrame(8 + (formalwords++ - 4) * 4);
+				a1 = new InFrameC((formalwords++ - 4) * 4);
 			if (formalwords < 4) {
 				a2 = new InReg(new Temp());
 				formalwords++;
 			} else
-				a2 = new InFrame(8 + (formalwords++ - 4) * 4);
+				a2 = new InFrameC((formalwords++ - 4) * 4);
 			ret = new DoubleWordAccess(a1, a2);
 		} else {
 			if (formalwords < 4) {
 				ret = new InReg(new Temp());
 				formalwords++;
 			} else
-				ret = new InFrame(8 + (formalwords++ - 4) * 4);
+				ret = new InFrameC((formalwords++ - 4) * 4);
 		}
 		formals.add(ret);
 		return ret;
@@ -152,53 +153,45 @@ public class Frame extends actrec.Frame implements TempMap {
 	public void RewritePrologueEpilogue(Procedure proc) {
 		LinkedList<Instr> prologue = new LinkedList<>();
 		LinkedList<Instr> epilogue = new LinkedList<>();
-		prologue.add(proc.instrs.removeFirst());	// label
-		prologue.add(proc.instrs.removeFirst());	// push lr r7
-		prologue.add(proc.instrs.removeFirst());	// mov fp <- sp
-		proc.instrs.removeFirst();
-		proc.instrs.removeFirst();
-		
-		epilogue.addFirst(proc.instrs.removeLast());	// bx lr
-		epilogue.addFirst(proc.instrs.removeLast());	// pop lr r7
-		epilogue.addFirst(proc.instrs.removeLast());	// mov sp <- fp
-		proc.instrs.removeLast();
-		proc.instrs.removeLast();
-		
 		HashSet<Temp> defs = new HashSet<>();
-		boolean FP = false;
 		for (Instr i : proc.instrs) {
 			if (i.defines() != null)
 				for (Temp t : i.defines())
 					defs.add(proc.regalloc.getTemp(t));
-			if (!FP && i.uses() != null && i.uses().contains(Hardware.FP))
-				FP = true;
 		}
-		if (!FP && !defs.contains(Hardware.LR) && leafFrame) {
-			prologue.removeLast();
-			prologue.removeLast();
-			epilogue.removeFirst();
-			epilogue.removeFirst();
-		}
-		String s = "{ ";
+		String sPush = "{ ";
+		String sPop = null;
 		for (Temp t : Hardware.popRegs) 
 			if (defs.contains(t)) {
-				s += Hardware.tempMap.get(t) + ", ";
+				sPush += Hardware.tempMap.get(t) + ", ";
 				popregcount++;
 			}
-		s = s.substring(0, s.length()-2);
-		s += " }";
-		if (s.length() > 3) {
-			prologue.add(new OPER("push " + s, null, null));
-			epilogue.addFirst(new OPER("pop " + s, null, null));
+		if (leafFrame && !defs.contains(Hardware.LR)) {
+			epilogue.add(new MOVE("mov pc, lr", null, null));
+			sPush = sPush.substring(0, sPush.length()-2);
+			sPush += " }";
+			sPop = sPush;
+		} else {
+			popregcount++;
+			sPop = sPush + "pc }";
+			sPush += "lr }";
 		}
-		int i = proc.regalloc.SpillSize() + ((maxparam<4)?0:((maxparam - 3) * 4)) +
-				(popregcount%2==1?4:0);
+		if (sPush.length() > 3) {
+			prologue.addFirst(new OPER("push " + sPush, null, null));
+			epilogue.addFirst(new OPER("pop " + sPop, null, null));
+		}
+		int i = proc.regalloc.SpillSize() + ParamSize() + AlignFrameSize();
 		if (i != 0) {
 			prologue.add(new OPER("sub `d0, `s0, #" + i, new TempList(Hardware.SP,
 					null), new TempList(Hardware.SP, null)));
 			epilogue.addFirst(new OPER("add `d0, `s0, #" + i, new TempList(Hardware.SP,
 					null), new TempList(Hardware.SP, null)));
 		}
+		if (frameLabel.label.equals("main"))
+			prologue.addFirst(new LABEL("main:", frameLabel));
+		else
+			prologue.addFirst(new LABEL(frameLabel.label + ":", frameLabel));
+		
 
 		for (Iterator<Instr> it = prologue.descendingIterator(); it.hasNext(); proc.instrs
 				.addFirst(it.next()))
@@ -212,43 +205,34 @@ public class Frame extends actrec.Frame implements TempMap {
 	public Deque<Instr> AddPrologueEpilogue(Procedure proc) {
 		LinkedList<Instr> prologue = new LinkedList<>();
 		LinkedList<Instr> epilogue = new LinkedList<>();
-		if (frameLabel.label.equals("main"))
-			prologue.add(new LABEL("main:", frameLabel));
-		else
-			prologue.add(new LABEL(frameLabel.label + ":", frameLabel));
-		prologue.add(new OPER("push { r7, lr }", null, Hardware.spfp));
-		prologue.add(new MOVE("mov `d0, `s0", Hardware.FP, Hardware.SP));
-		prologue.add(new OPER("push { r4-r6, r8-r11 }", null,
-				Hardware.calleeSavedList));
-		prologue.add(new OPER("sub `d0, `s0, #`k0", new TempList(Hardware.SP,
-				null), new TempList(Hardware.SP, null)));
+		prologue.add(new OPER("", new TempList(Hardware.SP, null), null));
 		int i = 0;
 		for (Access a : formals) {
 			if (a instanceof DoubleWordAccess) {
 				DoubleWordAccess da = (DoubleWordAccess) a;
 				if (da.a1 instanceof InReg) {
-					if (i%2 == 1) i++;
+					if (i%2 == 1) i++; // Align 8 byte formal
 					prologue.add(new MOVE("mov `d0, `s0", ((InReg) da.a1).t,
 							Hardware.argRegs[i++]));
+				} else if (da.a1 instanceof InFrameC) {
+					prologue.add(((InFrameC) da.a1).init(Hardware.SP));
 				}
 				if (da.a2 instanceof InReg)
 					prologue.add(new MOVE("mov `d0, `s0", ((InReg) da.a2).t,
 							Hardware.argRegs[i++]));
+				else if (da.a2 instanceof InFrameC) 
+								prologue.add(((InFrameC) da.a2).init(Hardware.SP));
 			} else if (a instanceof InReg)
 				prologue.add(new MOVE("mov `d0, `s0", ((InReg) a).t,
 						Hardware.argRegs[i++]));
+			else if (a instanceof InFrameC) 
+				prologue.add(((InFrameC) a).init(Hardware.SP));
 		}
 		epilogue.add(new LABEL(proc.done.label + ":", proc.done));
 		if (frameLabel.label.equals("main"))
 			epilogue.add(new OPER("ldr `d0, =0",
 					new TempList(Hardware.r0, null), null));
-		epilogue.add(new OPER("add `d0, `s0, #`k0", new TempList(Hardware.SP,
-				null), new TempList(Hardware.SP, null)));
-		epilogue.add(new OPER("pop { r4-r6, r8-r11 }",
-				Hardware.calleeSavedList, null));
-		epilogue.add(new MOVE("mov `d0, `s0", Hardware.SP, Hardware.FP));
-		epilogue.add(new OPER("pop { r7, lr }", Hardware.spfp, null));
-		epilogue.add(new OPER("bx lr", null, new TempList(Hardware.LR, null)));
+		epilogue.add(new OPER("",null, Hardware.returnSink));
 		for (Iterator<Instr> it = prologue.descendingIterator(); it.hasNext(); proc.instrs
 				.addFirst(it.next()))
 			;
@@ -285,7 +269,7 @@ public class Frame extends actrec.Frame implements TempMap {
 	}
 
 	@Override
-	public String constMap(int n) {
+	public String constMap(int n, char c) {
 		// Params
 		if (maxparam >= 4)
 			return Integer.toString((maxparam - 3) * 4);
@@ -351,6 +335,29 @@ public class Frame extends actrec.Frame implements TempMap {
 	@Override
 	public Temp[] PreferredRegisters() {
 		return Hardware.callerSaved;
+	}
+
+	@Override
+	public Temp SP() {
+		return Hardware.SP;
+	}
+
+	@Override
+	public int ParamSize() {
+		return ((maxparam<4)?0:((maxparam - 3) * 4));
+	}
+	
+	private int AlignFrameSize() {
+		return (popregcount%2==1?4:0);
+	}
+	
+	private int PushRegSize() {
+		return popregcount*4;
+	}
+
+	@Override
+	public int FrameSize(RegAlloc regalloc) {
+		return PushRegSize() + AlignFrameSize() + regalloc.SpillSize() + ParamSize();
 	}
 
 

@@ -12,6 +12,7 @@ import semanal.ClassTable;
 import actrec.DefaultMap;
 import actrec.arm.CodeGeneration;
 import actrec.arm.Frame;
+import actrec.arm.Hardware;
 import assem.Instr;
 import ast.Program;
 import ast.visitor.FrameBuilderVisitor;
@@ -25,6 +26,9 @@ import lexer.ParseException;
 public final class EntryPoint2 {
 	public static String pathname = "test.minijava";
 	public static void main(String[] args) {
+		// Loads Hardware START
+		Hardware.regiseters.size();
+		// Loads Hardware END
 		File f = new File(pathname);
 		Program p = null;
 		try {

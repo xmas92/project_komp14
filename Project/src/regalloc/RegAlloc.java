@@ -75,14 +75,21 @@ public class RegAlloc implements TempMap {
 					continue outer;
 			} else if (i.assem.startsWith("ldr")) {
 				Temp def = getTemp(i.defines().head);
+				if (def == null)
+					continue outer;
+				boolean b = false;
 				for (Iterator<Instr> li = proc.instrs.listIterator(idx); li.hasNext();) {
 					Instr i2 = li.next();
 					if (/*i2 instanceof LABEL ||*/ i2.jumps() != null || 
-							(i2.uses() != null && i2.uses().contains(def, color)))
+							(i2.uses() != null && i2.uses().contains(def, color))) {
+						b = true;
 						break;
+					}
 					if (i2.defines() != null && i2.defines().contains(def, color))
 						continue outer;
 				}
+				if (!b) 
+					continue outer;
 			}
 			nInstr.add(i);
 		}
@@ -182,8 +189,8 @@ public class RegAlloc implements TempMap {
 //					degree.put(liveness.tnode(vi), 0);
 //					adjList.put(liveness.tnode(vi), new HashSet<Node>());
 					String str = String.format(
-							"ldr `d0, [ `s0, #-`k%d ]\t@ Reload", spillSize);
-					Instr ni = new OPER(str, L(vi), L(proc.frame.FP()));
+							"ldr `d0, [ `s0, #`k%d ]\t@ Reload", spillSize);
+					Instr ni = new OPER(str, L(vi), L(proc.frame.SP()));
 //					ifg.addBefore(ni,i);
 //					liveness.addNode(ifg.node(ni));
 					nInstrs.add(ni);
@@ -197,8 +204,8 @@ public class RegAlloc implements TempMap {
 //					degree.put(liveness.tnode(vi), 0);
 //					adjList.put(liveness.tnode(vi), new HashSet<Node>());
 					String str = String.format(
-							"str `s0, [ `s1, #-`k%d ]\t@ Spill", spillSize);
-					Instr ni = new OPER(str, null, L(vi, proc.frame.FP()));
+							"str `s0, [ `s1, #`k%d ]\t@ Spill", spillSize);
+					Instr ni = new OPER(str, null, L(vi, proc.frame.SP()));
 //					ifg.addAfter(ni,i);
 //					liveness.addNode(ifg.node(ni));
 					nInstrs.add(ni);
@@ -598,9 +605,14 @@ public class RegAlloc implements TempMap {
 	}
 
 	@Override
-	public String constMap(int n) {
-		int i = proc.frame.SpillOffset();
-		return Integer.toString(i+n);
+	public String constMap(int n, char c) {
+		switch (c) {
+		case 'k':
+			return Integer.toString(proc.frame.ParamSize()+(spillSize-n));
+		case 'f':
+			return Integer.toString(proc.frame.FrameSize(this)+n);
+		}
+		throw new Error("Unknown Compiler Const: " + c);
 	}
 
 	public int SpillSize() {

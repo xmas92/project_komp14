@@ -3,6 +3,7 @@ package actrec.jvm;
 import java.util.Deque;
 import java.util.HashSet;
 
+import regalloc.RegAlloc;
 import ir.translate.Procedure;
 import ir.tree.Exp;
 import ir.tree.ExpList;
@@ -212,6 +213,24 @@ public class Frame extends actrec.Frame {
 
 	@Override
 	public Temp[] PreferredRegisters() {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public Temp SP() {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public int ParamSize() {
+		// Should never happen
+		throw new Error();
+	}
+
+	@Override
+	public int FrameSize(RegAlloc regalloc) {
 		// Should never happen
 		throw new Error();
 	}

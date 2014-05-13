@@ -6,6 +6,7 @@ import ir.tree.BINOP;
 import ir.tree.CALL;
 import ir.tree.CCALL;
 import ir.tree.CJUMP;
+import ir.tree.COMPILERCONST;
 import ir.tree.CONST;
 import ir.tree.EXPS;
 import ir.tree.Exp;
@@ -102,9 +103,9 @@ public class CodeGeneration {
 		return new TempList(t1, new TempList(t2, null));
 	}
 
-//	private TempList L(Temp t1, Temp t2, Temp t3) {
-//		return new TempList(t1, new TempList(t2, new TempList(t3, null)));
-//	}
+	// private TempList L(Temp t1, Temp t2, Temp t3) {
+	// return new TempList(t1, new TempList(t2, new TempList(t3, null)));
+	// }
 
 	public void Emit(Instr i) {
 		instructions.add(i);
@@ -159,7 +160,9 @@ public class CodeGeneration {
 			TEMP s = (TEMP) e;
 			if (d.e instanceof BINOP) {
 				BINOP b = (BINOP) d.e;
-				if (b.e2 instanceof CONST && ((CONST) b.e2).value < 4096) {
+				if (b.e2 instanceof CONST && ((CONST) b.e2).value < 4096
+						&& ((CONST) b.e2).value > -4096
+						&& (b.op == Operator.Plus || b.op == Operator.Minus)) {
 					TEMP t = new TEMP(munchExp(b.e1));
 					CONST c = (CONST) b.e2;
 					if (b.op == Operator.Plus) {
@@ -171,11 +174,23 @@ public class CodeGeneration {
 								-c.value);
 						Emit(new OPER(str, null, L(s.temp, t.temp)));
 					}
+				} else if (b.e2 instanceof COMPILERCONST
+						&& (b.op == Operator.Plus || b.op == Operator.Minus)) {
+					TEMP t = new TEMP(munchExp(b.e1));
+					int v = ((COMPILERCONST) b.e2).value;
+					char c = ((COMPILERCONST) b.e2).c;
+					String str;
+					if (b.op == Operator.Plus)
+						str = String.format("str `s0, [ `s1 ,#`%c%d ]", c, v);
+					else
+						str = String.format("str `s0, [ `s1 , #`%c%d ]", c, -v);
+					Emit(new OPER(str, null, L(s.temp, t.temp)));
+
 				} else {
 					Temp addr = munchExp(b);
 					String str = String.format("str `s0, [ `s1 ]");
 					Emit(new OPER(str, null, L(s.temp, addr)));
-				} 
+				}
 			} else if (d.e instanceof TEMP) {
 				Temp addr = ((TEMP) d.e).temp;
 				String str = String.format("str `s0, [ `s1 ]");
@@ -200,7 +215,9 @@ public class CodeGeneration {
 			if (d.e instanceof BINOP) {
 				BINOP b = (BINOP) d.e;
 				if (b.e1 instanceof TEMP && b.e2 instanceof CONST
-						&& ((CONST) b.e2).value < 4096) {
+						&& ((CONST) b.e2).value < 4096
+						&& ((CONST) b.e2).value > -4096
+						&& (b.op == Operator.Plus || b.op == Operator.Minus)) {
 					TEMP t = (TEMP) b.e1;
 					CONST c = (CONST) b.e2;
 					if (b.op == Operator.Plus) {
@@ -212,6 +229,18 @@ public class CodeGeneration {
 								-c.value);
 						Emit(new OPER(str, null, L(s, t.temp)));
 					}
+				} else if (b.e1 instanceof TEMP
+						&& b.e2 instanceof COMPILERCONST
+						&& (b.op == Operator.Plus || b.op == Operator.Minus)) {
+					TEMP t = (TEMP) b.e1;
+					int v = ((COMPILERCONST) b.e2).value;
+					char c = ((COMPILERCONST) b.e2).c;
+					String str;
+					if (b.op == Operator.Plus)
+						str = String.format("str `s0, [ `s1 ,#`%c%d ]", c, v);
+					else
+						str = String.format("str `s0, [ `s1 , #`%c%d ]", c, -v);
+					Emit(new OPER(str, null, L(s, t.temp)));
 				} else {
 					Temp addr = munchExp(b);
 					String str = String.format("str `s0, [ `s1 ]");
@@ -296,7 +325,7 @@ public class CodeGeneration {
 	private void munchJUMP(Label l) {
 		Emit(new OPER("b " + l.label, null, null, l));
 	}
-	
+
 	private String munchCMP(Operator op, Exp e1, Exp e2) {
 		String condc;
 		switch (op) {
@@ -346,11 +375,11 @@ public class CodeGeneration {
 				&& ((BINOP) e2).e2 instanceof CONST) {
 			CONST c = (CONST) ((BINOP) e2).e2;
 			Temp e2t = ((TEMP) ((BINOP) e2).e1).temp;
-			String str = String.format("cmp `s0,`s1, asr #%d", c.value);
+			String str = String.format("cmp `s0, `s1, asr #%d", c.value);
 			Emit(new OPER(str, null, L(e1t, e2t)));
 		} else if (e2 instanceof TEMP) {
 			Temp e2t = ((TEMP) e2).temp;
-			Emit(new OPER("cmp `s0,`s1", null, L(e1t, e2t)));
+			Emit(new OPER("cmp `s0, `s1", null, L(e1t, e2t)));
 		} else if (e2 instanceof CONST) {
 			CONST c = (CONST) e2;
 			String str;
@@ -364,7 +393,7 @@ public class CodeGeneration {
 			}
 		} else {
 			Temp e2t = munchExp(e2);
-			Emit(new OPER("cmp `s0,`s1", null, L(e1t, e2t)));
+			Emit(new OPER("cmp `s0, `s1", null, L(e1t, e2t)));
 		}
 		return condc;
 	}
@@ -395,36 +424,22 @@ public class CodeGeneration {
 	 */
 	private void munchUMULL(TEMP rlo, TEMP rhi, Exp e1, Exp e2) {
 		/*
-		if (e1 instanceof CONST && e2 instanceof CONST) {
-			CONST c1 = (CONST) e1;
-			CONST c2 = (CONST) e2;
-			long val = c1.value & 0xFFFFFFFFL;
-			val *= c2.value & 0xFFFFFFFFL;
-			munchMOVE(rlo, new CONST((int) val));
-			munchMOVE(rhi, new CONST((int) (val>>32)));
-		} else if (e1 instanceof CONST) {
-			CONST c = (CONST) e1;
-			if (c.value == 0) {
-				munchMOVE(rlo, new CONST(0));
-				munchMOVE(rhi, new CONST(0));
-			} else if (c.value == 1) {
-				munchMOVE(rlo, e2);
-				munchMOVE(rhi, new CONST(0));
-			}
-		} else if (e2 instanceof CONST) { 
-			CONST c = (CONST) e2;
-			if (c.value == 0) {
-				munchMOVE(rlo, new CONST(0));
-				munchMOVE(rhi, new CONST(0));
-			} else if (c.value == 1) {
-				munchMOVE(rlo, e1);
-				munchMOVE(rhi, new CONST(0));
-			}
-		} else */{
+		 * if (e1 instanceof CONST && e2 instanceof CONST) { CONST c1 = (CONST)
+		 * e1; CONST c2 = (CONST) e2; long val = c1.value & 0xFFFFFFFFL; val *=
+		 * c2.value & 0xFFFFFFFFL; munchMOVE(rlo, new CONST((int) val));
+		 * munchMOVE(rhi, new CONST((int) (val>>32))); } else if (e1 instanceof
+		 * CONST) { CONST c = (CONST) e1; if (c.value == 0) { munchMOVE(rlo, new
+		 * CONST(0)); munchMOVE(rhi, new CONST(0)); } else if (c.value == 1) {
+		 * munchMOVE(rlo, e2); munchMOVE(rhi, new CONST(0)); } } else if (e2
+		 * instanceof CONST) { CONST c = (CONST) e2; if (c.value == 0) {
+		 * munchMOVE(rlo, new CONST(0)); munchMOVE(rhi, new CONST(0)); } else if
+		 * (c.value == 1) { munchMOVE(rlo, e1); munchMOVE(rhi, new CONST(0)); }
+		 * } else
+		 */{
 			Temp e1t = munchExp(e1);
 			Temp e2t = munchExp(e2);
-			Emit(new OPER("umull `d0, `d1, `s0, `s1", L(rhi.temp, rlo.temp), L(e1t,
-					e2t)));
+			Emit(new OPER("umull `d0, `d1, `s0, `s1", L(rhi.temp, rlo.temp), L(
+					e1t, e2t)));
 		}
 	}
 
@@ -447,9 +462,20 @@ public class CodeGeneration {
 		} else if (e instanceof NAME) {
 			NAME n = (NAME) e;
 			return munchNAME(n.label);
-		}
+		} 
+//		else if (e instanceof COMPILERCONST) {
+//			COMPILERCONST c = (COMPILERCONST) e;
+//			return munchCOMPILERCONST(c.value, c.c);
+//		}
 		throw new Error("CG Tile:\n" + e);
 	}
+
+//	private Temp munchCOMPILERCONST(int value, char c) {
+//		Temp t = new Temp();
+//		String str = String.format("ldr `d0, =`%c%d", c, value);
+//		Emit(new OPER(str, L(t), null));
+//		return t;
+//	}
 
 	/*
 	 * munchCALL
@@ -573,6 +599,7 @@ public class CodeGeneration {
 		if (e instanceof BINOP
 				&& ((BINOP) e).e2 instanceof CONST
 				&& ((CONST) ((BINOP) e).e2).value < 4096
+				&& ((CONST) ((BINOP) e).e2).value > -4096
 				&& (((BINOP) e).op == Operator.Plus || ((BINOP) e).op == Operator.Minus)) {
 			Temp e1t = munchExp(((BINOP) e).e1);
 			int c = ((CONST) ((BINOP) e).e2).value;
@@ -581,6 +608,18 @@ public class CodeGeneration {
 				str = String.format("ldr `d0, [ `s0 , #%d ]", c);
 			else
 				str = String.format("ldr `d0, [ `s0 , #%d ]", -c);
+			Emit(new OPER(str, L(t), L(e1t)));
+		} else if (e instanceof BINOP
+				&& ((BINOP) e).e2 instanceof COMPILERCONST
+				&& (((BINOP) e).op == Operator.Plus || ((BINOP) e).op == Operator.Minus)) {
+			Temp e1t = munchExp(((BINOP) e).e1);
+			int v = ((COMPILERCONST) ((BINOP) e).e2).value;
+			char c = ((COMPILERCONST) ((BINOP) e).e2).c;
+			String str;
+			if (((BINOP) e).op == Operator.Plus)
+				str = String.format("ldr `d0, [ `s0 ,#`%c%d ]", c, v);
+			else
+				str = String.format("ldr `d0, [ `s0 , #`%c%d ]", c, -v);
 			Emit(new OPER(str, L(t), L(e1t)));
 		} else if (e instanceof TEMP) {
 			Temp et = ((TEMP) e).temp;
@@ -612,7 +651,7 @@ public class CodeGeneration {
 		TempList ret = null;
 		TempList t = ret;
 		int n = 0;
-//		LinkedList<Temp> exps = new LinkedList<>();
+		// LinkedList<Temp> exps = new LinkedList<>();
 		while (list != null) {
 			if (list.head instanceof ALIGN) {
 				list = list.tail;
@@ -620,32 +659,32 @@ public class CodeGeneration {
 				continue;
 			}
 			Temp et = munchExp(list.head);
-//			exps.addLast(et);
+			// exps.addLast(et);
 			list = list.tail;
 			Access argN = frame.ArgAccess(n++);
 			Exp a = argN.unEx(new TEMP(Hardware.SP));
 			munchMOVE(a, new TEMP(et)); // Move expression into arg slot
 			if (a instanceof TEMP) {
-				Temp at = ((TEMP)a).temp;
+				Temp at = ((TEMP) a).temp;
 				if (t == null)
 					ret = t = new TempList(at, null);
 				else
 					t = t.tail = new TempList(at, null);
 			}
 		}
-//		n = exps.size();
-//		for (Temp et : exps) {
-//			Access argN = frame.ArgAccess(--n);
-//			Exp a = argN.unEx(new TEMP(Hardware.SP));
-//			munchMOVE(a, new TEMP(et)); // Move expression into arg slot
-//			if (a instanceof TEMP) {
-//				Temp at = ((TEMP)a).temp;
-//				if (t == null)
-//					ret = t = new TempList(at, null);
-//				else
-//					t = t.tail = new TempList(at, null);
-//			}
-//		}
+		// n = exps.size();
+		// for (Temp et : exps) {
+		// Access argN = frame.ArgAccess(--n);
+		// Exp a = argN.unEx(new TEMP(Hardware.SP));
+		// munchMOVE(a, new TEMP(et)); // Move expression into arg slot
+		// if (a instanceof TEMP) {
+		// Temp at = ((TEMP)a).temp;
+		// if (t == null)
+		// ret = t = new TempList(at, null);
+		// else
+		// t = t.tail = new TempList(at, null);
+		// }
+		// }
 		return ret;
 	}
 }

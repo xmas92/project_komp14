@@ -13,10 +13,10 @@ public class InFrame extends Access {
 		this.offset = offset;
 	}
 	@Override
-	public Exp unEx(Exp fp) {
+	public Exp unEx(Exp sp) {
 		if (offset == 0) {
-			return new MEM(fp);
+			return new MEM(sp);
 		}
-		return new MEM(new BINOP(Operator.Plus, fp, new CONST(offset)));
+		return new MEM(new BINOP(Operator.Plus, sp, new CONST(offset)));
 	}
 }

@@ -9,7 +9,7 @@ public class DefaultMap implements TempMap {
 	public DefaultMap() {}
 
 	@Override
-	public String constMap(int n) {
+	public String constMap(int n, char c) {
 		return "CompilerConst" + n;
 	}
 }

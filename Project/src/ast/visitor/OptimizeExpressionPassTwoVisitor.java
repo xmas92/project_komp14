@@ -133,6 +133,14 @@ public class OptimizeExpressionPassTwoVisitor implements
 				return new BooleanLiteralExpression(l, c,
 						((BooleanLiteralExpression) n.e1).value
 								&& ((BooleanLiteralExpression) n.e2).value);
+			if (n.e1 instanceof BooleanLiteralExpression)
+				if (((BooleanLiteralExpression) n.e1).value == false)
+					return new BooleanLiteralExpression(l, c, false);
+				else 
+					return n.e2;
+			if (n.e2 instanceof BooleanLiteralExpression)
+				if (((BooleanLiteralExpression) n.e2).value == true)
+					return n.e1;
 			break;
 		case Or:
 			if (n.e1 instanceof BooleanLiteralExpression
@@ -140,6 +148,14 @@ public class OptimizeExpressionPassTwoVisitor implements
 				return new BooleanLiteralExpression(l, c,
 						((BooleanLiteralExpression) n.e1).value
 								|| ((BooleanLiteralExpression) n.e2).value);
+			if (n.e1 instanceof BooleanLiteralExpression)
+				if (((BooleanLiteralExpression) n.e1).value == true)
+					return new BooleanLiteralExpression(l, c, true);
+				else 
+					return n.e2;
+			if (n.e2 instanceof BooleanLiteralExpression)
+				if (((BooleanLiteralExpression) n.e2).value == false)
+					return n.e1;
 			break;
 		case Eq:
 			if (n.e1 instanceof BooleanLiteralExpression

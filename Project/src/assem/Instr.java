@@ -61,7 +61,14 @@ public abstract class Instr {
 					int n = ++i;
 					while (i < assem.length() && Character.isDigit(assem.charAt(i))) i++;
 					n = Integer.parseInt(assem.substring(n, i--));
-					s.append(m.constMap(n));
+					s.append(m.constMap(n, 'k'));
+				}
+					break;
+				case 'f': {
+					int n = ++i;
+					while (i < assem.length() && Character.isDigit(assem.charAt(i))) i++;
+					n = Integer.parseInt(assem.substring(n, i--));
+					s.append(m.constMap(n, 'f'));
 				}
 					break;
 				case '`':

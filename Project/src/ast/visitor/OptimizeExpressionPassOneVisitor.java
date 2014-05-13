@@ -81,10 +81,9 @@ public class OptimizeExpressionPassOneVisitor implements
 
 	@Override
 	public Expression visit(VariableDeclaration n, Boolean arg) {
-		if (n.type.IsType(Primitive.IntArr)
-				|| n.type.IsType(Primitive.LongArr) || n.isField
-				|| !Type.IsPrimative(n.type))
-			n.CONST = false ;
+		if (n.type.IsType(Primitive.IntArr) || n.type.IsType(Primitive.LongArr)
+				|| n.isField || !Type.IsPrimative(n.type))
+			n.CONST = false;
 		return null;
 	}
 
@@ -116,12 +115,30 @@ public class OptimizeExpressionPassOneVisitor implements
 				return new BooleanLiteralExpression(l, c,
 						((BooleanLiteralExpression) n.e1).value
 								&& ((BooleanLiteralExpression) n.e2).value);
+			if (n.e1 instanceof BooleanLiteralExpression)
+				if (((BooleanLiteralExpression) n.e1).value == false)
+					return new BooleanLiteralExpression(l, c, false);
+				else
+					return n.e2;
+			if (n.e2 instanceof BooleanLiteralExpression)
+				if (((BooleanLiteralExpression) n.e2).value == true)
+					return n.e1;
+			break;
 		case Or:
 			if (n.e1 instanceof BooleanLiteralExpression
 					&& n.e2 instanceof BooleanLiteralExpression)
 				return new BooleanLiteralExpression(l, c,
 						((BooleanLiteralExpression) n.e1).value
 								|| ((BooleanLiteralExpression) n.e2).value);
+			if (n.e1 instanceof BooleanLiteralExpression)
+				if (((BooleanLiteralExpression) n.e1).value == true)
+					return new BooleanLiteralExpression(l, c, true);
+				else
+					return n.e2;
+			if (n.e2 instanceof BooleanLiteralExpression)
+				if (((BooleanLiteralExpression) n.e2).value == false)
+					return n.e1;
+			break;
 		case Eq:
 			if (n.e1 instanceof BooleanLiteralExpression
 					&& n.e2 instanceof BooleanLiteralExpression)
@@ -156,6 +173,7 @@ public class OptimizeExpressionPassOneVisitor implements
 							l,
 							c,
 							Value((LongLiteralExpression) n.e1) == Value((LongLiteralExpression) n.e2));
+			break;
 		case NotEq:
 			if (n.e1 instanceof BooleanLiteralExpression
 					&& n.e2 instanceof BooleanLiteralExpression)
@@ -190,6 +208,7 @@ public class OptimizeExpressionPassOneVisitor implements
 							l,
 							c,
 							Value((LongLiteralExpression) n.e1) != Value((LongLiteralExpression) n.e2));
+			break;
 		case Greater:
 			if (n.e1 instanceof IntegerLiteralExpression)
 				if (n.e2 instanceof IntegerLiteralExpression)
@@ -213,6 +232,7 @@ public class OptimizeExpressionPassOneVisitor implements
 							l,
 							c,
 							Value((LongLiteralExpression) n.e1) > Value((LongLiteralExpression) n.e2));
+			break;
 		case GreaterEq:
 			if (n.e1 instanceof IntegerLiteralExpression)
 				if (n.e2 instanceof IntegerLiteralExpression)
@@ -236,6 +256,7 @@ public class OptimizeExpressionPassOneVisitor implements
 							l,
 							c,
 							Value((LongLiteralExpression) n.e1) >= Value((LongLiteralExpression) n.e2));
+			break;
 		case Less:
 			if (n.e1 instanceof IntegerLiteralExpression)
 				if (n.e2 instanceof IntegerLiteralExpression)
@@ -259,6 +280,7 @@ public class OptimizeExpressionPassOneVisitor implements
 							l,
 							c,
 							Value((LongLiteralExpression) n.e1) < Value((LongLiteralExpression) n.e2));
+			break;
 		case LessEq:
 			if (n.e1 instanceof IntegerLiteralExpression)
 				if (n.e2 instanceof IntegerLiteralExpression)
@@ -282,6 +304,7 @@ public class OptimizeExpressionPassOneVisitor implements
 							l,
 							c,
 							Value((LongLiteralExpression) n.e1) <= Value((LongLiteralExpression) n.e2));
+			break;
 		case Minus:
 			if (n.e1 instanceof IntegerLiteralExpression)
 				if (n.e2 instanceof IntegerLiteralExpression)
@@ -301,6 +324,7 @@ public class OptimizeExpressionPassOneVisitor implements
 					return new LongLiteralExpression(l, c,
 							Value((LongLiteralExpression) n.e1)
 									- Value((LongLiteralExpression) n.e2));
+			break;
 		case Plus:
 			if (n.e1 instanceof IntegerLiteralExpression)
 				if (n.e2 instanceof IntegerLiteralExpression)
@@ -320,6 +344,7 @@ public class OptimizeExpressionPassOneVisitor implements
 					return new LongLiteralExpression(l, c,
 							Value((LongLiteralExpression) n.e1)
 									+ Value((LongLiteralExpression) n.e2));
+			break;
 		case Times:
 			if (n.e1 instanceof IntegerLiteralExpression)
 				if (n.e2 instanceof IntegerLiteralExpression)
@@ -340,8 +365,9 @@ public class OptimizeExpressionPassOneVisitor implements
 							Value((LongLiteralExpression) n.e1)
 									* Value((LongLiteralExpression) n.e2));
 		default:
-			return n;
+			break;
 		}
+		return n;
 	}
 
 	@Override
