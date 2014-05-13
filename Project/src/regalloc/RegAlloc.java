@@ -2,6 +2,7 @@ package regalloc;
 
 import ir.translate.Procedure;
 
+import java.util.HashSet;
 import java.util.TreeMap;
 import java.util.Set;
 import java.util.Iterator;
@@ -63,9 +64,6 @@ public class RegAlloc implements TempMap {
 		this.registers = proc.frame.registers();
 		this.tempMap = proc.frame.tempMap();
 		this.K = this.registers.size();
-		for (Temp t : registers) {
-			color.put(t, t); // Registers are colored with their own color (ofc)
-		}
 		Main();
 		LinkedList<Instr> nInstr = new LinkedList<>();
 		int idx = 0;
@@ -155,7 +153,7 @@ public class RegAlloc implements TempMap {
 	}
 
 	private void RewriteProgram() {
-		Set<Node> newTemps = new TreeSet<>();
+//		Set<Node> newTemps = new TreeSet<>();
 		for (Node n : coalescedNodesBeforeSpill) {
 			for (Instr i : proc.instrs) {
 				i.CoalesceTemp(liveness.gtemp(n), liveness.gtemp(GetAlias(n)));
@@ -180,11 +178,14 @@ public class RegAlloc implements TempMap {
 				TempList u = i.uses();
 				if (u != null && u.contains(liveness.gtemp(v))) {
 					Temp vi = new Temp();
-					newTemps.add(liveness.tnode(vi));
+//					newTemps.add(liveness.tnode(vi));
+//					degree.put(liveness.tnode(vi), 0);
+//					adjList.put(liveness.tnode(vi), new HashSet<Node>());
 					String str = String.format(
 							"ldr `d0, [ `s0, #-`k%d ]\t@ Reload", spillSize);
 					Instr ni = new OPER(str, L(vi), L(proc.frame.FP()));
-					ifg.addBefore(ni,i);
+//					ifg.addBefore(ni,i);
+//					liveness.addNode(ifg.node(ni));
 					nInstrs.add(ni);
 					i.ChangeUse(liveness.gtemp(v), vi);
 				}
@@ -192,11 +193,14 @@ public class RegAlloc implements TempMap {
 				TempList d = i.defines();
 				if (d != null && d.contains(liveness.gtemp(v))) {
 					Temp vi = new Temp();
-					newTemps.add(liveness.tnode(vi));
+//					newTemps.add(liveness.tnode(vi));
+//					degree.put(liveness.tnode(vi), 0);
+//					adjList.put(liveness.tnode(vi), new HashSet<Node>());
 					String str = String.format(
 							"str `s0, [ `s1, #-`k%d ]\t@ Spill", spillSize);
 					Instr ni = new OPER(str, null, L(vi, proc.frame.FP()));
-					ifg.addAfter(ni,i);
+//					ifg.addAfter(ni,i);
+//					liveness.addNode(ifg.node(ni));
 					nInstrs.add(ni);
 					i.ChangeDef(liveness.gtemp(v), vi);
 				}
@@ -206,9 +210,9 @@ public class RegAlloc implements TempMap {
 		spillNodes.clear();
 		// add stuff to initial
 		initial.clear();
-		initial.addAll(newTemps);
-		initial.addAll(coloredNodes);
-		initial.addAll(coalescedNodes);
+//		initial.addAll(newTemps);
+//		initial.addAll(coloredNodes);
+//		initial.addAll(coalescedNodes);
 		coloredNodes.clear();
 		coalescedNodes.clear();
 	}
@@ -248,8 +252,8 @@ public class RegAlloc implements TempMap {
 		Node m = null;
 		int p = -1;
 		for (Node n : spillWorklist)
-			if (degree.get(n) > p) {
-				p = degree.get(n);
+			if (Degree(n) > p) {
+				p = Degree(n);
 				m = n;
 			}
 		spillWorklist.remove(m);
@@ -347,7 +351,7 @@ public class RegAlloc implements TempMap {
 	}
 
 	private void AddWorkList(Node u) {
-		if (!precolored.contains(u) && !MoveReleted(u) && degree.get(u) < K) {
+		if (!precolored.contains(u) && !MoveReleted(u) && Degree(u) < K) {
 			freezeWorklist.remove(u);
 			simplifyWorklist.add(u);
 		}
@@ -436,7 +440,7 @@ public class RegAlloc implements TempMap {
 
 	private void MakeWorklist() {
 		for (Node n : initial) {
-			if (degree.get(n) >= K)
+			if (Degree(n) >= K)
 				spillWorklist.add(n);
 			else if (MoveReleted(n))
 				freezeWorklist.add(n);
@@ -462,7 +466,7 @@ public class RegAlloc implements TempMap {
 		return ret;
 	}
 
-	private boolean firstTimeAroundBuild = true;
+//	private boolean firstTimeAroundBuild = true;
 
 	private TempList Defines(Instr i) {
 		TempList ret = i.defines();
@@ -475,9 +479,35 @@ public class RegAlloc implements TempMap {
 //	}
 
 	private void Build() {
-		// Setup Precolored
-		for (Temp t : registers)
+		// Clear Everything
+		simplifyWorklist.clear();
+		freezeWorklist.clear();
+		spillWorklist.clear();
+
+		coalescedMoves.clear();
+		constrainedMoves.clear();
+		frozenMoves.clear();
+		worklistMoves.clear();
+		activeMoves.clear();
+
+		spillNodes.clear();
+		coalescedNodes.clear();
+		coloredNodes.clear();
+
+		precolored.clear();
+		initial.clear();
+		selectStack.clear();
+		adjSet.clear();
+		adjList.clear();
+		degree.clear();
+		moveList.clear();
+		alias.clear();
+		color.clear();
+		// Setup Precolored, colored
+		for (Temp t : registers) {
 			precolored.add(liveness.tnode(t));
+			color.put(t, t); // Registers are colored with their own color (ofc)
+		}
 		// Build
 //		Set<Temp> live = liveness.out.get(ifg.node(proc.instrs.getLast()));
 		// check if it is uses/defs or in/out :)
@@ -506,12 +536,18 @@ public class RegAlloc implements TempMap {
 //			live.removeAll(Defines(I));
 //			live.addAll(Uses(I));
 		}
-		// Setup Inital
-		if (firstTimeAroundBuild)
-			for (Node n : liveness.nodes())
+
+		// Setup initial adjList degree
+//		if (firstTimeAroundBuild)
+			for (Node n : liveness.nodes()) {
 				if (!precolored.contains(n))
 					initial.add(n);
-		firstTimeAroundBuild = false;
+				if (!degree.containsKey(n))
+					degree.put(n, 0);
+				if (!adjList.containsKey(n))
+					adjList.put(n, new HashSet<Node>());
+			}
+//			firstTimeAroundBuild = false;
 	}
 
 	private void AddEdge(Node u, Node v) {
@@ -525,30 +561,31 @@ public class RegAlloc implements TempMap {
 					adjList.put(u, new TreeSet<Node>());
 				adjList.get(u).add(v);
 				Integer d = degree.get(u);
-				degree.put(u, (d == null) ? 0 : d + 1);
+				degree.put(u, (d == null) ? 1 : d + 1);
 			}
 			if (!precolored.contains(v)) {
 				if (!adjList.containsKey(v))
 					adjList.put(v, new TreeSet<Node>());
 				adjList.get(v).add(u);
 				Integer d = degree.get(v);
-				degree.put(v, (d == null) ? 0 : d + 1);
+				degree.put(v, (d == null) ? 1 : d + 1);
 			}
 		}
 	}
 
 	private InstrFlowGraph ifg;
-	private boolean firstTimeAroundLivenessAnalysis = true;
+//	private boolean firstTimeAroundLivenessAnalysis = true;
 
 	private void LivenessAnalysis() {
-		if (firstTimeAroundLivenessAnalysis) {
+//		if (firstTimeAroundLivenessAnalysis) {
 			ifg = new InstrFlowGraph(proc);
 			// ifg.show(System.out);
 			liveness = new Liveness(ifg, proc);
 			// liveness.show(System.out);
-		} else {
-			liveness.iterate();
-		}
+//			firstTimeAroundLivenessAnalysis = false;
+//		} else {
+//			liveness.iterate();
+//		}
 	}
 
 	@Override

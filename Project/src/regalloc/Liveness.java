@@ -5,6 +5,8 @@ import ir.translate.Procedure;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import regalloc.RegAlloc.Edge;
 import actrec.Temp;
@@ -16,16 +18,20 @@ import dataflow.InstrFlowGraph;
 import dataflow.Node;
 
 public class Liveness extends InterferenceGraph {
-	HashMap<Node, HashSet<Edge>> moves = new HashMap<>();
+	Map<Node, Set<Edge>> moves = new HashMap<>();
 
-	HashMap<Node, HashSet<Temp>> in = new HashMap<>();
-	HashMap<Node, HashSet<Temp>> out = new HashMap<>();
+	Map<Node, Set<Temp>> in = new HashMap<>();
+	Map<Node, Set<Temp>> out = new HashMap<>();
 	
 	private TempList Defines(Instr i) {
 		TempList ret = i.defines();
 		return ret == null? new TempList() : ret;
 	}
 	public void iterate() {
+		for(Node n : ifg.nodes()) {
+			in.put(n, new HashSet<Temp>(ifg.use(n)));
+			out.put(n, new HashSet<Temp>());
+		}
 		boolean c = true;
 		while (c) {
 			c = false;
@@ -47,10 +53,6 @@ public class Liveness extends InterferenceGraph {
 		// init every node to 0
 		this.ifg = ifg;
 		this.proc = proc;
-		for(Node n : ifg.nodes()) {
-			in.put(n, new HashSet<Temp>(ifg.use(n)));
-			out.put(n, new HashSet<Temp>());
-		}
 		iterate();
 		/*
 		ifg.show(System.out);
@@ -129,7 +131,7 @@ public class Liveness extends InterferenceGraph {
 		super.rmEdge(b, a);
 	}
 	
-	HashMap<Temp, Node> nodes = new HashMap<>();
+	Map<Temp, Node> nodes = new HashMap<>();
 	@Override
 	public Node tnode(Temp temp) {
 		Node node = nodes.get(temp);
@@ -139,14 +141,14 @@ public class Liveness extends InterferenceGraph {
 		return node;
 	}
 
-	HashMap<Node, Temp> temps = new HashMap<>();
+	Map<Node, Temp> temps = new HashMap<>();
 	@Override
 	public Temp gtemp(Node node) {
 		return temps.get(node);
 	}
 
 	@Override
-	public HashMap<Node, HashSet<Edge>> moves() {
+	public Map<Node, Set<Edge>> moves() {
 		return moves;
 	}
 
@@ -155,4 +157,8 @@ public class Liveness extends InterferenceGraph {
 		// TODO Setup spillCost if you feel like a boss ;) (aka have time)
 		return 100 / (node.degree()==0?1:node.degree());
 	}
+//	public void addNode(Node node) {
+//		out.put(node, new HashSet<Temp>());
+//		in.put(node, new HashSet<Temp>());
+//	}
 }
